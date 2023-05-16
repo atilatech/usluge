@@ -25,6 +25,8 @@ def respond():
    print("got text message :", text)
    # for debugging purposes only
    print("got text message :", text)
+   print("chat id :", chat_id)
+   print("message id :", msg_id)
    # the first time you chat with the bot AKA the welcoming message
    if text == "/start":
        # print the welcoming message
