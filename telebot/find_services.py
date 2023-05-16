@@ -26,8 +26,3 @@ def find_service_provider(prompt):
         return response.choices[0].text.strip()
     else:
         return None
-
-
-# Example usage
-user_prompt = input("painters in podgorica: ")
-result = find_service_provider(user_prompt)
