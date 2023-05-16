@@ -41,6 +41,7 @@ def respond():
 
     elif text.startswith("book"):
         response = find_service_provider(text)
+        print("find_service_provider response", find_service_provider)
         bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
     else:
         try:
