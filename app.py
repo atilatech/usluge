@@ -22,6 +22,7 @@ def respond():
 
    # Telegram understands UTF-8, so encode text for unicode compatibility
    text = update.message.text.encode('utf-8').decode()
+   print("got text message :", text)
    # for debugging purposes only
    print("got text message :", text)
    # the first time you chat with the bot AKA the welcoming message
@@ -57,7 +58,9 @@ def respond():
 def set_webhook():
     # we use the bot object to link the bot to our app which live
     # in the link provided by URL
-    s = bot.setWebhook('{URL}/{HOOK}'.format(URL=BOT_DEPLOYMENT_URL, HOOK=TOKEN))
+    webhook = '{URL}/{HOOK}'.format(URL=BOT_DEPLOYMENT_URL, HOOK=TOKEN)
+    print(webhook)
+    s = bot.setWebhook(webhook)
     # something to let us know things work
     if s:
         return "webhook setup ok"
