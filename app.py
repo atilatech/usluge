@@ -1,6 +1,7 @@
 from flask import Flask, request
 import telegram
 from telebot.credentials import bot_token, bot_user_name, BOT_DEPLOYMENT_URL
+from telebot.find_services import find_service_provider
 
 global bot
 global TOKEN
@@ -27,13 +28,16 @@ def respond():
    if text == "/start":
        # print the welcoming message
        bot_welcome = """
-       Welcome to Usluge, a bot for finding service providers in Montenegro.
+       Welcome to Usluge, a bot for booking service providers in Montenegro.
+       Start your sentence with 'book' to find a service provider.
        If you need help, send /help or message @@IvanKapisoda.
        """
        # send the welcoming message
        bot.sendMessage(chat_id=chat_id, text=bot_welcome, reply_to_message_id=msg_id)
 
-
+   elif text.startswith("book"):
+       response = find_service_provider(text)
+       bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
    else:
        try:
            # clear the message we got from any non alphabets
@@ -59,7 +63,7 @@ def set_webhook():
         return "webhook setup ok"
     else:
         return "webhook setup failed"
-    
+
 @app.route('/')
 def index():
     return '.'
