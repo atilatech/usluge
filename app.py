@@ -5,8 +5,7 @@ import telegram
 from telebot.credentials import bot_token, bot_user_name, BOT_DEPLOYMENT_URL
 from telebot.find_services import find_service_provider
 
-global bot
-global TOKEN
+
 TOKEN = bot_token
 bot = telegram.Bot(token=TOKEN)
 
