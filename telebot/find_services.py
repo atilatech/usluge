@@ -29,6 +29,9 @@ def find_service_provider(prompt):
 
     # Process the API response
     if response.choices:
-        return response.choices[0].text.strip()
+
+        response_text = response.choices[0].text.strip()
+        print("response_text", response_text)
+        return response_text
     else:
         return None
