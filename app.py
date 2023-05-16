@@ -1,6 +1,6 @@
 from flask import Flask, request
 import telegram
-from telebot.credentials import bot_token, bot_user_name,URL
+from telebot.credentials import bot_token, bot_user_name, BOT_DEPLOYMENT_URL
 
 global bot
 global TOKEN
@@ -52,7 +52,7 @@ def respond():
 def set_webhook():
     # we use the bot object to link the bot to our app which live
     # in the link provided by URL
-    s = bot.setWebhook('{URL}{HOOK}'.format(URL=URL, HOOK=TOKEN))
+    s = bot.setWebhook('{URL}/{HOOK}'.format(URL=BOT_DEPLOYMENT_URL, HOOK=TOKEN))
     # something to let us know things work
     if s:
         return "webhook setup ok"
