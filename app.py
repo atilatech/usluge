@@ -33,13 +33,13 @@ async def respond():
         bot_welcome = """
        Welcome to Usluge, a bot for booking service providers in Montenegro.
        Start your sentence with 'book' to find a service provider.
-       If you need help, send /help or message @@IvanKapisoda.
+       If you need help, send /help or message @IvanKapisoda.
        """
         # send the welcoming message
         await bot.send_message(chat_id=chat_id, text=bot_welcome, reply_to_message_id=msg_id)
 
     elif text.startswith("book"):
-        response = find_service_provider(text)
+        response = await find_service_provider(text)
         print("find_service_provider response", response)
         await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
     else:

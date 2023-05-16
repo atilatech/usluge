@@ -20,7 +20,8 @@ def find_service_provider(prompt):
     # Make the API call to OpenAI
     response = openai.Completion.create(
         engine='text-davinci-003',
-        prompt='Prompt: Reply the following message:' + prompt + '\n\n using the following information' + services_data,
+        prompt='Prompt: Reply in English to the following message:'
+               + prompt + '\n\n using the following information' + services_data,
         max_tokens=100,
         n=1,
         stop=None,
