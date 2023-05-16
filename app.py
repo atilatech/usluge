@@ -39,7 +39,7 @@ async def respond():
         await bot.send_message(chat_id=chat_id, text=bot_welcome, reply_to_message_id=msg_id)
 
     elif text.startswith("book"):
-        response = await find_service_provider(text)
+        response = find_service_provider(text)
         print("find_service_provider response", response)
         await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
     else:
