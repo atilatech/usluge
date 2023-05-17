@@ -38,10 +38,12 @@ app = Flask(__name__)
 @app.route('/{}'.format(TOKEN), methods=['POST'])
 async def respond():
     # retrieve the message in JSON and then transform it to Telegram object
-    update = telegram.Update.de_json(request.get_json(force=True), bot)
+
+    json_data = request.get_json(force=True)
+    update = telegram.Update.de_json(json_data, bot)
 
     if not update:
-        return
+        return f"bad request! No update found, just {json_data}", 400
     chat_id = update.message.chat.id
     msg_id = update.message.message_id
 
