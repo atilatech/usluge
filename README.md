@@ -21,3 +21,5 @@ This project was created using the tutorial: [Building Your First Telegram Bot: 
 ## Deployment
 
 `git push heroku master`
+
+Debug server: `heroku logs --tail`
