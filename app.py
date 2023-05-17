@@ -8,7 +8,7 @@ import asyncio
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
-from telebot.save_data import save_message, save_message_response
+from telebot.save_data import save_message, save_message_response, is_repeated_update, update_latest_update_id
 
 # Increase timeout to avoid:
 # Telegram.error.TimedOut: Pool timeout: All connections in the connection pool are occupied.
@@ -41,6 +41,14 @@ async def respond():
 
     json_data = request.get_json(force=True)
     update = telegram.Update.de_json(json_data, bot)
+    print('json_data', json_data)
+    # Get the current update_id
+    current_update_id = update.update_id
+
+    # Check if it's a repeated update
+    if is_repeated_update(current_update_id):
+        # Ignore repeated update
+        return 'Repeated update', 200
 
     if not any([update, update.message, update.message.chat]):
         return f"bad request! No update found, just {json_data}", 400
@@ -71,6 +79,7 @@ async def respond():
         print("find_service_provider response", response)
         await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
 
+    update_latest_update_id(current_update_id)
     return 'ok'
 
 

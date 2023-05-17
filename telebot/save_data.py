@@ -15,6 +15,25 @@ gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
 # Open the Google Spreadsheet by its URL
 spreadsheet = gc.open_by_url(USLUGE_USERS_SPREADSHEET_URL)
 
+UPDATE_ID_WORKSHEET_NAME = 'update_id'
+
+UPDATE_ID_WORKSHEET = spreadsheet.worksheet(UPDATE_ID_WORKSHEET_NAME)
+
+
+def is_repeated_update(update_id):
+    previous_update_id = UPDATE_ID_WORKSHEET.acell('A1').value
+    print('update_id', update_id)
+    print('previous_update_id', previous_update_id)
+
+    if update_id <= int(previous_update_id):
+        return True
+    return False
+
+
+# Function to update the latest update_id
+def update_latest_update_id(update_id):
+    UPDATE_ID_WORKSHEET.update('A1', str(update_id))
+
 
 def save_message(message: Message):
     dict_message = create_dict_from_message(message)
