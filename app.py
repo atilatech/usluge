@@ -49,7 +49,7 @@ async def respond():
     if is_repeated_update(current_update_id):
         # Ignore repeated update
         print('Repeated update')
-        return 'Repeated update', 200
+        # return 'Repeated update', 200
 
     if not update or not update.message or not update.message.chat:
         return f"bad request! No update found, just {json_data}", 400
