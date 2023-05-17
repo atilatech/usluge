@@ -50,7 +50,7 @@ async def respond():
         # Ignore repeated update
         return 'Repeated update', 200
 
-    if not any([update, update.message, update.message.chat]):
+    if not update or not update.message or not update.message.chat:
         return f"bad request! No update found, just {json_data}", 400
     chat_id = update.message.chat.id
     msg_id = update.message.message_id
