@@ -86,7 +86,9 @@ def create_dict_from_message(message: Message):
 
     datetime_object = datetime.fromtimestamp(unix_timestamp)
     # Convert the datetime object to GMT+2
-    timezone = pytz.timezone('Etc/GMT+2')
+    # Specify the Montenegro timezone
+    timezone = pytz.timezone('Europe/Podgorica')
+    # Convert datetime_object to Montenegro timezone
     datetime_object_gmt2 = datetime_object.astimezone(timezone)
 
     # Format the datetime object as a human-readable string
