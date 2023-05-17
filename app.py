@@ -40,6 +40,8 @@ async def respond():
     # retrieve the message in JSON and then transform it to Telegram object
     update = telegram.Update.de_json(request.get_json(force=True), bot)
 
+    if not update:
+        return
     chat_id = update.message.chat.id
     msg_id = update.message.message_id
 
@@ -61,26 +63,11 @@ async def respond():
         except telegram.error.TimedOut as e:
             print('telegram.error.TimedOut', str(e))
             return f"bad request! {str(e)}", 400
-    elif text.startswith("book"):
+    else:
         response = find_service_provider(text)
         save_message_response(response, update.message)
         print("find_service_provider response", response)
         await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
-    else:
-        try:
-            # clear the message we got from any non-alphabets
-            text = re.sub(r"\W", "_", text)
-            # create the API link for the avatar based on http://avatars.adorable.io/
-            url = "https://api.adorable.io/avatars/285/{}.png".format(text.strip())
-            # reply with a photo to the name the user sent,
-            # note that you can send photos by URL and Telegram will fetch it for you
-            await bot.send_photo(chat_id=chat_id, photo=url, reply_to_message_id=msg_id)
-        except Exception as e:
-            print("Exception", e)
-            # if things went wrong
-            await bot.send_message(chat_id=chat_id,
-                                   text="There was a problem in the name you used, please enter a different name",
-                                   reply_to_message_id=msg_id)
 
     return 'ok'
 

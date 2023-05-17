@@ -19,7 +19,11 @@ def find_service_provider(prompt):
         # Make the API call to OpenAI
         response = openai.Completion.create(
             engine='text-davinci-003',
-            prompt='Prompt: Reply in English to the following message:'
+            prompt='Prompt: You are a chat bot that helps people find local service providers.'
+                   'Examples of service providers include services'
+                   ' such as apartment cleaning, painters, plumbers, hairdressers etc.'
+                   'Try your best to help user answer their question.'
+                   'Reply in English, Montenegrin or Serbian to the following message:'
                    + prompt + '\n\n using the following information' + services_data,
             max_tokens=100,
             n=1,
