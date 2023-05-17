@@ -65,8 +65,10 @@ async def respond():
     if text == "/start":
         # print the welcoming message
         bot_welcome = """
-       Welcome to Usluge, a bot for booking service providers in Montenegro.
-       Start your sentence with 'book' to find a service provider.
+       Welcome to Usluge, a place for finding services in Montenegro.
+       Examples:
+       1. find cleaners Tivat
+       2. find chef Budva
        If you need help, send /help or message @IvanKapisoda.
        """
         # send the welcoming message
