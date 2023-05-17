@@ -66,10 +66,16 @@ async def respond():
         # print the welcoming message
         bot_welcome = """
        Welcome to Usluge, a place for finding services in Montenegro.
-       Examples:
+       Examples you can send in the chat:
        1. find cleaners Tivat
        2. find chef Budva
        If you need help, send /help or message @IvanKapisoda.
+       ---
+       Dobrodošli u Usluge, mjesto za pronalaženje usluga u Crnoj Gori.
+         Primeri koje možete poslati u ćaskanju:
+         1. naći čistače Tivat
+         2. naći kuvara Budva
+         Ako vam je potrebna pomoć, pošaljite /help ili poruku @IvanKapisoda.
        """
         # send the welcoming message
         try:
