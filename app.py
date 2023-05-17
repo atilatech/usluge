@@ -52,6 +52,8 @@ async def respond():
 
     if not update or not update.message or not update.message.chat:
         return f"bad request! No update found, just {json_data}", 400
+
+    update_latest_update_id(current_update_id)
     chat_id = update.message.chat.id
     msg_id = update.message.message_id
 
@@ -78,8 +80,6 @@ async def respond():
         save_message_response(response, update.message)
         print("find_service_provider response", response)
         await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
-
-    update_latest_update_id(current_update_id)
     return 'ok'
 
 
