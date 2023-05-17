@@ -8,7 +8,7 @@ Try it at http://usluge.io/
 
 ## Quickstart
 
-This project was created using the tutorial: [Building Your First Telegram Bot: A Step by Step Guide](https://www.toptal.com/python/telegram-bot-tutorial-python).
+This project was created using [Python Telegram Bot: Your first Bot tutorial](https://github.com/python-telegram-bot/python-telegram-bot/wiki/Extensions---Your-first-Bot).
 
 `python -m venv botenv/`
 
