@@ -42,7 +42,7 @@ async def respond():
     json_data = request.get_json(force=True)
     update = telegram.Update.de_json(json_data, bot)
 
-    if not update:
+    if not any([update, update.message, update.message.chat]):
         return f"bad request! No update found, just {json_data}", 400
     chat_id = update.message.chat.id
     msg_id = update.message.message_id
