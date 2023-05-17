@@ -1,7 +1,6 @@
-import re
 import telegram
 from flask import Flask, request
-from telebot.credentials import bot_token, BOT_DEPLOYMENT_URL, SENTRY_DSN
+from telebot.credentials import BOT_TOKEN, BOT_DEPLOYMENT_URL, SENTRY_DSN
 from telebot.find_services import find_service_provider
 import asyncio
 
@@ -16,8 +15,7 @@ from telebot.save_data import save_message, save_message_response, is_repeated_u
 telegram_request = telegram.request.HTTPXRequest(connection_pool_size=10, read_timeout=25.0, write_timeout=25.0,
                                                  connect_timeout=25.0, pool_timeout=25.0)
 
-TOKEN = bot_token
-bot = telegram.Bot(token=TOKEN, request=telegram_request)
+bot = telegram.Bot(token=BOT_TOKEN, request=telegram_request)
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
@@ -35,7 +33,7 @@ sentry_sdk.init(
 app = Flask(__name__)
 
 
-@app.route('/{}'.format(TOKEN), methods=['POST'])
+@app.route('/{}'.format(BOT_TOKEN), methods=['POST'])
 async def respond():
     # retrieve the message in JSON and then transform it to Telegram object
 

@@ -37,41 +37,17 @@ def update_latest_update_id(update_id):
 
 def save_message(message: Message):
     dict_message = create_dict_from_message(message)
-    append_dict_to_sheet(dict_message)
+    append_message_to_sheet(dict_message)
     return dict_message
 
 
 def save_message_response(response, message):
-    if not hasattr(message, "chat") or not hasattr(message, "message_id"):
-        raise ValueError("Invalid message object")
+    message_response = create_dict_from_message(message)
+    message_response['response'] = response
 
-    # Select the first sheet in the spreadsheet
-    sheet = spreadsheet.get_worksheet(0)
-
-    try:
-        # Find the column index of the "chat_id" and "message_id" columns
-        header_row = sheet.row_values(1)
-        chat_id_index = header_row.index("chat_id") + 1
-        message_id_index = header_row.index("message_id") + 1
-        response_index = header_row.index("response") + 1
-
-        # Search for a matching row based on chat_id and message_id
-        matching_row = None
-        for i, row in enumerate(sheet.get_all_values()[1:], start=2):
-            if row[chat_id_index - 1] == str(message.chat.id) and row[message_id_index - 1] == str(message.message_id):
-                # Update the response column with the new response
-                sheet.update_cell(i, response_index, response)
-                matching_row = row
-                break
-
-        return matching_row
-    except gspread.exceptions.CellNotFound:
-        print("No matching row found")
-        return None
-    except gspread.exceptions.APIError as e:
-        # Handle API error
-        print("API error occurred:", str(e))
-        return None
+    print('message_response', message_response)
+    append_message_to_sheet(message_response)
+    return message_response
 
 
 def create_dict_from_message(message: Message):
@@ -106,12 +82,10 @@ def create_dict_from_message(message: Message):
         'human_readable_date': human_readable_date
     }
 
-    print('message_data', message_data)
-
     return message_data
 
 
-def append_dict_to_sheet(data_to_save):
+def append_message_to_sheet(data_to_save):
     # Select the first sheet in the spreadsheet
     sheet = spreadsheet.get_worksheet(0)
 
@@ -142,4 +116,4 @@ if __name__ == "__main__":
         'text': 'Sample text message'
     }
 
-    append_dict_to_sheet(data)
+    append_message_to_sheet(data)

@@ -1,11 +1,10 @@
 import os
 
-bot_token = os.getenv('BOT_TOKEN', False)
+BOT_TOKEN = os.getenv('BOT_TOKEN', False)
 bot_user_name = "uslugebot"
 BOT_DEPLOYMENT_URL = "https://usluge-bot.herokuapp.com"
 
 OPEN_AI_API_KEY = os.getenv('OPEN_AI_API_KEY', False)
-
 SENTRY_DSN = os.getenv('SENTRY_DSN', False)
 
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID = os.getenv('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID', False)
