@@ -13,8 +13,8 @@ from telebot.save_data import save_message, save_message_response, is_repeated_u
 # Increase timeout to avoid:
 # Telegram.error.TimedOut: Pool timeout: All connections in the connection pool are occupied.
 # Request was *not* sent to Telegram. Consider adjusting the connection pool size or the pool timeout.
-telegram_request = telegram.request.HTTPXRequest(connection_pool_size=10, read_timeout=20.0, write_timeout=20.0,
-                                                 connect_timeout=20.0, pool_timeout=20.0)
+telegram_request = telegram.request.HTTPXRequest(connection_pool_size=10, read_timeout=25.0, write_timeout=25.0,
+                                                 connect_timeout=25.0, pool_timeout=25.0)
 
 TOKEN = bot_token
 bot = telegram.Bot(token=TOKEN, request=telegram_request)
