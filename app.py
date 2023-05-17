@@ -49,7 +49,7 @@ async def respond():
     if is_repeated_update(current_update_id):
         # Ignore repeated update
         print('Repeated update')
-        # return 'Repeated update', 200
+        return 'Repeated update', 200
 
     if not update or not update.message or not update.message.chat:
         return f"bad request! No update found, just {json_data}", 400
@@ -85,7 +85,7 @@ async def respond():
             print('telegram.error.TimedOut', str(e))
             return f"bad request! {str(e)}", 400
     else:
-        await bot.send_chat_action(chat_id=chat_id, action=telegram.constants.ChatAction.TYPING)
+        # await bot.send_chat_action(chat_id=chat_id, action=telegram.constants.ChatAction.TYPING)
         response = find_service_provider(text)
         save_message_response(response, update.message)
         print("find_service_provider response", response)
