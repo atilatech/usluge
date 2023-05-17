@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import gspread
+import pytz
 from telegram import Message
 
 from telebot.credentials import GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
@@ -25,7 +26,12 @@ def create_dict_from_message(message: Message):
     unix_timestamp = message.date.timestamp()
 
     datetime_object = datetime.fromtimestamp(unix_timestamp)
-    human_readable_date = datetime_object.strftime('%A, %B %d, %Y %I:%M %p')
+    # Convert the datetime object to GMT+2
+    timezone = pytz.timezone('Etc/GMT+2')
+    datetime_object_gmt2 = datetime_object.astimezone(timezone)
+
+    # Format the datetime object as a human-readable string
+    human_readable_date = datetime_object_gmt2.strftime('%A, %B %d, %Y %I:%M %p')
 
     message_data = {
         'text': text,
@@ -45,8 +51,6 @@ def create_dict_from_message(message: Message):
 
 
 def append_dict_to_sheet(data_to_save, spreadsheet_url=USLUGE_USERS_SPREADSHEET_URL):
-    # Load the credentials data_to_save
-
     # Authenticate using the loaded credentials
     gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
 
@@ -59,8 +63,11 @@ def append_dict_to_sheet(data_to_save, spreadsheet_url=USLUGE_USERS_SPREADSHEET_
     # Get the last row index in the sheet
     last_row_index = len(sheet.get_all_values()) + 1
 
+    # Retrieve the header row
+    header_row = sheet.row_values(1)
+
     # Prepare the values to be appended to the sheet
-    values = list(data_to_save.values())
+    values = [data_to_save.get(header, "") for header in header_row]
 
     # Append the values to the last row of the sheet
     sheet.insert_row(values, last_row_index)
