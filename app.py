@@ -8,7 +8,7 @@ import asyncio
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
-from telebot.save_data import save_message
+from telebot.save_data import save_message, save_message_response
 
 # Increase timeout to avoid:
 # Telegram.error.TimedOut: Pool timeout: All connections in the connection pool are occupied.
@@ -63,6 +63,7 @@ async def respond():
             return f"bad request! {str(e)}", 400
     elif text.startswith("book"):
         response = find_service_provider(text)
+        save_message_response(response, update.message)
         print("find_service_provider response", response)
         await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
     else:

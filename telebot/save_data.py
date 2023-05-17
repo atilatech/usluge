@@ -6,13 +6,47 @@ from telegram import Message
 
 from telebot.credentials import GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
 
-USLUGE_USERS_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/16e70m-8SeM1F2suA7rOunico2ASH5xEa_KwdeFbeqMA/edit#gid=0"
+USLUGE_USERS_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/16e70m-8SeM1F2suA7rOunico2ASH5xEa_KwdeFbeqMA" \
+                               "/edit#gid=0"
+
+# Authenticate using the loaded credentials
+gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
+
+# Open the Google Spreadsheet by its URL
+spreadsheet = gc.open_by_url(USLUGE_USERS_SPREADSHEET_URL)
 
 
 def save_message(message: Message):
     dict_message = create_dict_from_message(message)
     append_dict_to_sheet(dict_message)
     return dict_message
+
+
+def save_message_response(response, message):
+    if not hasattr(message, "chat") or not hasattr(message, "message_id"):
+        raise ValueError("Invalid message object")
+
+    # Select the first sheet in the spreadsheet
+    sheet = spreadsheet.get_worksheet(0)
+
+    try:
+        # Find the cell with matching chat_id and message_id
+        cell = sheet.find("{}, {}".format(message.chat.id, message.message_id))
+
+        # Update the response column with the new response
+        sheet.update_cell(cell.row, cell.col + 1, response)
+
+        # Retrieve the updated row
+        updated_row = sheet.row_values(cell.row)
+
+        return updated_row
+    except gspread.exceptions.CellNotFound:
+        print("No matching row found")
+        return None
+    except gspread.exceptions.APIError as e:
+        # Handle API error
+        print("API error occurred:", str(e))
+        return None
 
 
 def create_dict_from_message(message: Message):
@@ -50,13 +84,7 @@ def create_dict_from_message(message: Message):
     return message_data
 
 
-def append_dict_to_sheet(data_to_save, spreadsheet_url=USLUGE_USERS_SPREADSHEET_URL):
-    # Authenticate using the loaded credentials
-    gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
-
-    # Open the Google Spreadsheet by its URL
-    spreadsheet = gc.open_by_url(spreadsheet_url)
-
+def append_dict_to_sheet(data_to_save):
     # Select the first sheet in the spreadsheet
     sheet = spreadsheet.get_worksheet(0)
 
