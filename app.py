@@ -32,6 +32,10 @@ sentry_sdk.init(
 # start the flask app
 app = Flask(__name__)
 
+import datetime
+
+unix_timestamp = 1672427700
+
 
 @app.route('/{}'.format(TOKEN), methods=['POST'])
 async def respond():
@@ -52,6 +56,11 @@ async def respond():
     print("first_name", update.message.from_user.first_name)
     print("last_name", update.message.from_user.last_name)
     print("username", update.message.from_user.username)
+    print("date", update.message.date)
+
+    datetime_object = datetime.datetime.fromtimestamp(unix_timestamp)
+    human_readable_date = datetime_object.strftime('%A, %B %d, %Y %I:%M %p')
+    print("human_readable_date", human_readable_date)
 
     # the first time you chat with the bot AKA the welcoming message
     if text == "/start":
