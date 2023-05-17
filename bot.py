@@ -4,7 +4,7 @@ from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
 from bot_helpers.credentials import BOT_TOKEN
-from bot_helpers.find_services import find_service_provider
+from bot_helpers.generate_response import generate_response
 from bot_helpers.save_data import save_message_response
 
 logging.basicConfig(
@@ -34,7 +34,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-    response = find_service_provider(update.message.text)
+    response = generate_response(update.message.text)
     save_message_response(response, update.message)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
 

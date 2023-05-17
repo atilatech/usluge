@@ -6,25 +6,27 @@ from bot_helpers.credentials import OPEN_AI_API_KEY
 openai.api_key = OPEN_AI_API_KEY
 
 
-def find_service_provider(prompt):
+def generate_response(query):
     try:
         # Read the raw text file
         # Get the absolute path of the file within the app's directory
-        file_path = os.path.join(os.path.dirname(__file__), 'services.csv')
+        file_path = os.path.join(os.path.dirname(__file__), 'bot_data.csv')
 
         # Read the raw text file
         with open(file_path, 'r') as file:
-            services_data = file.read()
+            bot_data = file.read()
 
         # Make the API call to OpenAI
+
+        prompt_prefix = 'Prompt: You are a chat bot that helps people find local service providers.' \
+                        'Examples of service providers include services' \
+                        ' such as apartment cleaning, painters, plumbers, hairdressers etc.' \
+                        'Try your best to help users answer their question.' \
+                        'Reply in English to the following message:'
+
         response = openai.Completion.create(
             engine='text-davinci-003',
-            prompt='Prompt: You are a chat bot that helps people find local service providers.'
-                   'Examples of service providers include services'
-                   ' such as apartment cleaning, painters, plumbers, hairdressers etc.'
-                   'Try your best to help user answer their question.'
-                   'Reply in English to the following message:'
-                   + prompt + '\n\n using the following information' + services_data,
+            prompt=prompt_prefix + query + '\n\n using the following information' + bot_data,
             max_tokens=100,
             n=1,
             stop=None,

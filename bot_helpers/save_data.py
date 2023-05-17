@@ -6,14 +6,14 @@ from telegram import Message
 
 from bot_helpers.credentials import GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
 
-USLUGE_USERS_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/16e70m-8SeM1F2suA7rOunico2ASH5xEa_KwdeFbeqMA" \
+DATABASE_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/16e70m-8SeM1F2suA7rOunico2ASH5xEa_KwdeFbeqMA" \
                                "/edit#gid=0"
 
 # Authenticate using the loaded credentials
 gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
 
 # Open the Google Spreadsheet by its URL
-spreadsheet = gc.open_by_url(USLUGE_USERS_SPREADSHEET_URL)
+spreadsheet = gc.open_by_url(DATABASE_SPREADSHEET_URL)
 
 
 def save_message_response(response, message):
