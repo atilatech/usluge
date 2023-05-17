@@ -1,7 +1,7 @@
 import re
 import telegram
 from flask import Flask, request
-from telebot.credentials import bot_token, bot_user_name, BOT_DEPLOYMENT_URL, SENTRY_DSN
+from telebot.credentials import bot_token, BOT_DEPLOYMENT_URL, SENTRY_DSN
 from telebot.find_services import find_service_provider
 import asyncio
 
@@ -106,7 +106,13 @@ def set_webhook():
 
 @app.route('/')
 def index():
-    return '.'
+    return 'Welcome to Usluge'
+
+
+@app.route('/debug-sentry')
+def trigger_error():
+    # Throw a divide by Zero error to verify that Sentry works
+    return 1 / 0
 
 
 async def run_flask_app():
