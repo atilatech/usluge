@@ -1,9 +1,12 @@
 import re
 import telegram
 from flask import Flask, request
-from telebot.credentials import bot_token, bot_user_name, BOT_DEPLOYMENT_URL
+from telebot.credentials import bot_token, bot_user_name, BOT_DEPLOYMENT_URL, SENTRY_DSN
 from telebot.find_services import find_service_provider
 import asyncio
+
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 # Increase timeout to avoid:
 # Telegram.error.TimedOut: Pool timeout: All connections in the connection pool are occupied.
@@ -13,6 +16,18 @@ telegram_request = telegram.request.HTTPXRequest(connection_pool_size=10, read_t
 
 TOKEN = bot_token
 bot = telegram.Bot(token=TOKEN, request=telegram_request)
+
+sentry_sdk.init(
+    dsn=SENTRY_DSN,
+    integrations=[
+        FlaskIntegration(),
+    ],
+
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production.
+    traces_sample_rate=1.0
+)
 
 # start the flask app
 app = Flask(__name__)
@@ -96,6 +111,8 @@ def index():
 
 async def run_flask_app():
     app.run(threaded=True)
+
+
 if __name__ == '__main__':
     # Run the Flask app asynchronously
     asyncio.run(run_flask_app())

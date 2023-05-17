@@ -5,3 +5,5 @@ bot_user_name = "uslugebot"
 BOT_DEPLOYMENT_URL = "https://usluge-bot.herokuapp.com"
 
 OPEN_AI_API_KEY = os.getenv('OPEN_AI_API_KEY', False)
+
+SENTRY_DSN = os.getenv('SENTRY_DSN', False)
