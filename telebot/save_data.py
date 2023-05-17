@@ -30,16 +30,22 @@ def save_message_response(response, message):
     sheet = spreadsheet.get_worksheet(0)
 
     try:
-        # Find the cell with matching chat_id and message_id
-        cell = sheet.find("{}, {}".format(message.chat.id, message.message_id))
+        # Find the column index of the "chat_id" and "message_id" columns
+        header_row = sheet.row_values(1)
+        chat_id_index = header_row.index("chat_id") + 1
+        message_id_index = header_row.index("message_id") + 1
+        response_index = header_row.index("response") + 1
 
-        # Update the response column with the new response
-        sheet.update_cell(cell.row, cell.col + 1, response)
+        # Search for a matching row based on chat_id and message_id
+        matching_row = None
+        for i, row in enumerate(sheet.get_all_values()[1:], start=2):
+            if row[chat_id_index - 1] == str(message.chat.id) and row[message_id_index - 1] == str(message.message_id):
+                # Update the response column with the new response
+                sheet.update_cell(i, response_index, response)
+                matching_row = row
+                break
 
-        # Retrieve the updated row
-        updated_row = sheet.row_values(cell.row)
-
-        return updated_row
+        return matching_row
     except gspread.exceptions.CellNotFound:
         print("No matching row found")
         return None
