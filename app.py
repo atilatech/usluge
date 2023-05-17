@@ -8,6 +8,8 @@ import asyncio
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
+from telebot.save_data import save_message
+
 # Increase timeout to avoid:
 # Telegram.error.TimedOut: Pool timeout: All connections in the connection pool are occupied.
 # Request was *not* sent to Telegram. Consider adjusting the connection pool size or the pool timeout.
@@ -32,10 +34,6 @@ sentry_sdk.init(
 # start the flask app
 app = Flask(__name__)
 
-import datetime
-
-unix_timestamp = 1672427700
-
 
 @app.route('/{}'.format(TOKEN), methods=['POST'])
 async def respond():
@@ -46,21 +44,8 @@ async def respond():
     msg_id = update.message.message_id
 
     # Telegram understands UTF-8, so encode text for Unicode compatibility
-    text = update.message.text.encode('utf-8').decode()
-    print("got text message :", text)
-
-    print("chat id :", chat_id)
-    print("message id :", msg_id)
-
-    print("id", update.message.from_user.id)
-    print("first_name", update.message.from_user.first_name)
-    print("last_name", update.message.from_user.last_name)
-    print("username", update.message.from_user.username)
-    print("date", update.message.date)
-
-    datetime_object = datetime.datetime.fromtimestamp(unix_timestamp)
-    human_readable_date = datetime_object.strftime('%A, %B %d, %Y %I:%M %p')
-    print("human_readable_date", human_readable_date)
+    saved_message = save_message(update.message)
+    text = saved_message['text']
 
     # the first time you chat with the bot AKA the welcoming message
     if text == "/start":
