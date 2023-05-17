@@ -84,6 +84,7 @@ async def respond():
             print('telegram.error.TimedOut', str(e))
             return f"bad request! {str(e)}", 400
     else:
+        await bot.send_chat_action(chat_id=chat_id, action=telegram.constants.ChatAction.TYPING)
         response = find_service_provider(text)
         save_message_response(response, update.message)
         print("find_service_provider response", response)
