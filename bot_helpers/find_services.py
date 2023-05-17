@@ -1,6 +1,6 @@
 import os
 import openai
-from telebot.credentials import OPEN_AI_API_KEY
+from bot_helpers.credentials import OPEN_AI_API_KEY
 
 # Set up OpenAI API credentials
 openai.api_key = OPEN_AI_API_KEY
