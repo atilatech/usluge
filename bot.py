@@ -1,11 +1,12 @@
 import logging
+
 from telegram import Update
-from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
 from utils.credentials import BOT_TOKEN
-from utils.generate_response import generate_response
+from utils.prompt import get_conversation_chain
 from utils.save_data import save_message_response
+from utils.taxi import find_taxi, get_driver_price
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -17,7 +18,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_welcome = """
            Welcome to Usluge, a place for finding services in Montenegro.
            Examples you can send in the chat:
-           1. find cleaners Podgorica
+           1. taxi from Chedi, Lustica Bay to UDG, Podgorica
            2. find hairdresser Budva
            If you need help, send /help or message @IvanKapisoda.
            ---
@@ -33,10 +34,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-    response = generate_response(update.message.text)['answer']
+    response = ''
+    if update.message.text.startswith('taxi'):
+        await find_taxi(update.message.text, application.bot)
+    elif update.message.text.startswith('accept'):
+        await get_driver_price(update.effective_chat.id, context.bot)
+    else:
+        response = get_conversation_chain().predict(human_input=update.message.text)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
+
     save_message_response(response, update.message)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
 
 
 if __name__ == '__main__':

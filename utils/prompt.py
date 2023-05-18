@@ -1,6 +1,7 @@
 import os
 import pickle
 
+from langchain import LLMChain
 from langchain.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
@@ -63,6 +64,26 @@ Answer in Markdown:"""
 PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["question", "context"]
 )
+
+
+def get_conversation_chain():
+    conversation_template = """You are a chatbot that helps people book local taxis.
+    
+    {chat_history}
+    Human: {human_input}
+    Chatbot:"""
+
+    prompt = PromptTemplate(
+        input_variables=["chat_history", "human_input"],
+        template=conversation_template
+    )
+    llm_chain = LLMChain(
+        llm=OpenAI(),
+        prompt=prompt,
+        verbose=True,
+        memory=memory,
+    )
+    return llm_chain
 
 
 def get_chain(vectors):
