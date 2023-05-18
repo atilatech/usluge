@@ -3,9 +3,9 @@ from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
-from bot_helpers.credentials import BOT_TOKEN
-from bot_helpers.generate_response import generate_response
-from bot_helpers.save_data import save_message_response
+from utils.credentials import BOT_TOKEN
+from utils.generate_response import generate_response
+from utils.save_data import save_message_response
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

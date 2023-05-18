@@ -4,7 +4,7 @@ import gspread
 import pytz
 from telegram import Message
 
-from bot_helpers.credentials import GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
+from utils.credentials import GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
 
 DATABASE_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/16e70m-8SeM1F2suA7rOunico2ASH5xEa_KwdeFbeqMA" \
                                "/edit#gid=0"
