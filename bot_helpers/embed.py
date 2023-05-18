@@ -10,7 +10,7 @@ FILE_DIRECTORY = os.path.dirname(__file__)
 
 def get_vectors():
     # Load the vectors from the pickle file
-    with open(f"{FILE_DIRECTORY}/data.pkl", "wb") as f:
+    with open(f"{FILE_DIRECTORY}/data.pkl", "rb") as f:
         vectors = pickle.load(f)
 
     return vectors

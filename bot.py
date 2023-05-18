@@ -32,9 +32,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                    reply_to_message_id=update.message.message_id)
 
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_chat_action(chat_id=update.message.chat_id, action=ChatAction.TYPING)
-    response = generate_response(update.message.text)
+    response = generate_response(update.message.text)['answer']
     save_message_response(response, update.message)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
 
@@ -43,9 +43,9 @@ if __name__ == '__main__':
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     start_handler = CommandHandler('start', start)
-    echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
+    chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
 
     application.add_handler(start_handler)
-    application.add_handler(echo_handler)
+    application.add_handler(chat_handler)
 
     application.run_polling()

@@ -16,7 +16,10 @@ This project was created using [Python Telegram Bot: Your first Bot tutorial](ht
 
 `pip install -r requirements.txt`
 
-`flask run`
+## Embed the Data
+`python bot_helpers/embed.py`
+
+`python bot.py`
 
 ## Deployment
 
