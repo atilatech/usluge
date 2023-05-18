@@ -1,51 +1,17 @@
 import os
 import openai
-from bot_helpers.credentials import OPEN_AI_API_KEY
+from bot_helpers.credentials import OPENAI_API_KEY
+from bot_helpers.embed import get_vectors
+from prompt import get_chain
 
 # Set up OpenAI API credentials
-openai.api_key = OPEN_AI_API_KEY
+openai.api_key = OPENAI_API_KEY
+
+vectors = get_vectors()
 
 
 def generate_response(query):
-    try:
-        # Read the raw text file
-        # Get the absolute path of the file within the app's directory
-        file_path = os.path.join(os.path.dirname(__file__), 'bot_data.csv')
-
-        # Read the raw text file
-        with open(file_path, 'r') as file:
-            bot_data = file.read()
-
-        # Make the API call to OpenAI
-
-        prompt_prefix = 'Prompt: You are a chat bot that helps people find local service providers.' \
-                        'Examples of service providers include services' \
-                        ' such as apartment cleaning, painters, plumbers, hairdressers etc.' \
-                        'Try your best to help users answer their question.' \
-                        'Reply in English to the following message:'
-
-        response = openai.Completion.create(
-            engine='text-davinci-003',
-            prompt=prompt_prefix + query + '\n\n using the following information' + bot_data,
-            max_tokens=100,
-            n=1,
-            stop=None,
-            temperature=0.7
-        )
-
-        # Process the API response
-        print("response.choices", response.choices)
-        if response.choices:
-            response_text = response.choices[0].text.strip()
-            print("response_text", response_text)
-            return response_text
-        else:
-            return None
-
-    except openai.error.RateLimitError as e:
-        # Handle RateLimitError
-        return str(e)
-
-    except Exception as e:
-        # Handle other exceptions
-        return str(e)
+    # TODO: add chat history
+    chain = get_chain(vectors)
+    response = chain({"question": query, "chat_history": []})["answer"]
+    return response
