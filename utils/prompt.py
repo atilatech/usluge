@@ -68,7 +68,7 @@ PROMPT = PromptTemplate(
 
 def get_conversation_chain():
     conversation_template = """You are a chatbot that helps people book local taxis.
-    
+    If they need a taxi, encourage them to start with the word taxi.
     {chat_history}
     Human: {human_input}
     Chatbot:"""

@@ -19,17 +19,10 @@ logging.basicConfig(
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_welcome = """
-           Welcome to Usluge, a place for finding services in Montenegro.
-           Examples you can send in the chat:
-           1. taxi from Chedi, Lustica Bay to UDG, Podgorica
-           2. find hairdresser Budva
-           If you need help, send /help or message @IvanKapisoda.
-           ---
-           Dobrodošli u Usluge, mjesto za pronalaženje usluga u Crnoj Gori.
-             Primeri koje možete poslati u ćaskanju:
-             1. naći čistače Podgorica
-             2. naći frizer Budva
-             Ako vam je potrebna pomoć, pošaljite /help ili poruku @IvanKapisoda.
+           Book a driver for Edcon and Luštica\n\n (Taxis run between Chedi, Lustica Bay and Podgorica).
+           Start your sentence with 'taxi' and then your pickup and drop off location.
+           Example:\n
+           Taxi from Chedi hotel lustica bay to UDG podgorica
            """
     await context.bot.send_message(chat_id=update.message.chat_id,
                                    text=bot_welcome,
