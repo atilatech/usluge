@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, PicklePersistence, \
     CallbackQueryHandler
 
-from utils.credentials import BOT_TOKEN
+from utils.credentials import BOT_TOKEN, bot_user_name
 from utils.prompt import get_conversation_chain
 from utils.save_data import save_message_response
 from utils.taxi import find_taxi, get_driver_price, confirm_price_with_rider, get_matching_ride_request, \
@@ -80,7 +80,7 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
                            "Details: {request} \n" \
                            "Price: {response} Euros \n" \
                            'You can also send them a message: https://t.me/{username}.\n' \
-                           # 'Tip: Add @uslugebot to your chat with {first_name} to instantly add trip details and
+            # 'Tip: Add @uslugebot to your chat with {first_name} to instantly add trip details and
         # price.'
 
         rider_message = message_template.format(first_name=ride_request['driver']['first_name'],
@@ -108,17 +108,33 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.bot_data[RIDE_REQUESTS_KEY][str(rider.id)]['driver'] = None
 
 
+async def chat_shared(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.message.chat_id
+
+    print('chat_shared', chat_shared)
+    print('update.message', update.message)
+    print('chat_id', chat_id)
+    print('context.bot.get_chat_members(chat_id)', context.bot.get_chat_members(chat_id))
+    print('update.message.new_chat_members', update.message.new_chat_members)
+
+
 if __name__ == '__main__':
     persistence = PicklePersistence(filepath="bot_data")
     application = ApplicationBuilder().token(BOT_TOKEN).persistence(persistence).build()
 
     start_handler = CommandHandler('start', start)
+    application.add_handler(start_handler)
+
     chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
+    application.add_handler(chat_handler)
 
     accept_ride_handler = CallbackQueryHandler(accept_ride)
-
-    application.add_handler(start_handler)
-    application.add_handler(chat_handler)
     application.add_handler(accept_ride_handler)
+
+    new_message_handler = CallbackQueryHandler(accept_ride)
+    chat_shared_handler = MessageHandler(filters.StatusUpdate.CHAT_SHARED |
+                                         filters.StatusUpdate.CHAT_CREATED,
+                                         chat_shared)
+    application.add_handler(chat_shared_handler)
 
     application.run_polling()
