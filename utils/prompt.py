@@ -67,9 +67,20 @@ PROMPT = PromptTemplate(
 
 
 def get_conversation_chain():
-    conversation_template = """You are a chatbot that helps people book local taxis.
-    If they need a taxi, encourage them to start with the word taxi.
-    {chat_history}
+    conversation_template = """You are a chatbot that helps people book local drivers.
+    Your goal is to get the user to give you 
+    1. Their pickup location
+    2. Their drop off location
+    3. Their pickup time
+
+    Then once you have all 3 pieces of information say 'New Driver Request:' 
+    and a message summarizing driver taxi request.
+    which includes as much information about the requested trip as possible.
+    
+    Reply in the same language as the Human. If in English, reply in English.
+    If in Serbian, reply in Serbian.
+    
+    Chat History: {chat_history}
     Human: {human_input}
     Chatbot:"""
 

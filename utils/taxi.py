@@ -5,16 +5,16 @@ from telegram.ext import ContextTypes
 from utils.utils import get_random_string, RIDE_REQUESTS_KEY
 
 drivers = [
-    # {
-    #     'username': 'IvanKapisoda',
-    #     'first_name': 'Ivan',
-    #     'id': '1642664602',
-    # },
     {
-        'username': 'Tomiwa',
-        'first_name': 'tomiwa1a1',
-        'id': '5238299107',
+        'username': 'IvanKapisoda',
+        'first_name': 'Ivan',
+        'id': '1642664602',
     },
+    # {
+    #     'username': 'Tomiwa',
+    #     'first_name': 'tomiwa1a1',
+    #     'id': '5238299107',
+    # },
 ]
 
 
@@ -61,11 +61,16 @@ def update_ride_request_accept_ride(rider_id, driver: telegram.User, context: Co
     return context.bot_data[RIDE_REQUESTS_KEY]
 
 
-async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE):
-    request = update.message.text
-    create_ride_request(context, update.message.from_user, update.message.text)
+async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE, driver_request):
+    create_ride_request(context, update.message.from_user, driver_request)
+
+    await bot.send_message(
+        chat_id=update.message.from_user.id,
+        text=f"We are looking for drivers for the following request: {driver_request}\n\n"
+    )
+
     for driver in drivers:
-        print('update.message', request)
+        print('update.message', driver_request)
         print('context.bot_data', context.bot_data)
         accept_callback_data = f"accept__{update.message.from_user.id}"
         decline_callback_data = f"decline__{update.message.from_user.id}"
@@ -79,7 +84,7 @@ async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE
         )
         await bot.send_message(
             chat_id=driver['id'],
-            text=f"New Request: {request}",
+            text=driver_request,
             reply_markup=telegram.InlineKeyboardMarkup([[accept_button, decline_button]])
         )
 

@@ -19,7 +19,7 @@ logging.basicConfig(
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_welcome = """
-           Book a driver for Edcon and Luštica\n\n (Taxis run between Chedi, Lustica Bay and Podgorica).
+           Book a driver for Edcon and Luštica\n\n(Taxis run between Chedi, Lustica Bay and Podgorica).
            Start your sentence with 'taxi' and then your pickup and drop off location.
            Example:\n
            Taxi from Chedi hotel lustica bay to UDG podgorica
@@ -31,9 +31,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = ''
-    if update.message.text.startswith('taxi'):
-        await find_taxi(update, application.bot, context)
-    elif update.message.text.isdigit():
+    if update.message.text.isdigit():
         ride_request = get_matching_ride_request(str(update.effective_chat.id), context.bot_data)
 
         rider_id = ride_request['rider']['id']
@@ -45,7 +43,11 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                        context.bot)
     else:
         response = get_conversation_chain().predict(human_input=update.message.text)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
+        if 'New Driver Request:' in response:
+            driver_request = response.split('New Driver Request:')[1]
+            await find_taxi(update, application.bot, context, driver_request)
+        else:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
 
     save_message_response(response, update.message)
 
