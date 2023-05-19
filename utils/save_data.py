@@ -17,7 +17,7 @@ gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
 spreadsheet = gc.open_by_url(DATABASE_SPREADSHEET_URL)
 
 
-def save_message_response(response, message, context: ContextTypes.DEFAULT_TYPE):
+def save_message_response(response, message: Message, context: ContextTypes.DEFAULT_TYPE):
     message_response = create_dict_from_message(message)
     message_response['response'] = response
 
@@ -28,10 +28,16 @@ def save_message_response(response, message, context: ContextTypes.DEFAULT_TYPE)
 
 
 def append_message_to_chat_history(message, context: ContextTypes.DEFAULT_TYPE):
-    if 'history' not in context.chat_data:
-        context.chat_data['history'] = []
 
-    history = context.chat_data['history']
+    chat_id = message['chat_id']
+
+    if 'chat_history' not in context.bot_data:
+        context.bot_data['chat_history'] = {}
+
+    if chat_id not in context.bot_data['chat_history']:
+        context.bot_data['chat_history'][chat_id] = []
+
+    history = context.bot_data['chat_history'][chat_id]
 
     # only keep the 10 most recent messages to avoid filling this up too much
     history.append({
@@ -41,7 +47,7 @@ def append_message_to_chat_history(message, context: ContextTypes.DEFAULT_TYPE):
         'bot': message['response'],
     })
     history = history[:10]
-    context.chat_data['history'] = history
+    context.bot_data['chat_history'][chat_id] = history
 
     return history
 
@@ -93,10 +99,7 @@ def append_message_to_sheet(data_to_save):
 async def save_bot_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         with open(f'{bot_data_file_path}.json', 'w') as json_file:
-            json.dump({
-                'bot_data': context.bot_data,
-                'chat_data': context.chat_data,
-            }, json_file, indent=4)
+            json.dump(context.bot_data, json_file, indent=4)
         message = f"Bot Data dumped successfully."
         print(message)
     except Exception as e:

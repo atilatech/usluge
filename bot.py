@@ -34,7 +34,7 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text.isdigit():
         await send_offer_to_client(update, context)
     else:
-        response = get_conversation_chain(context).predict(human_input=update.message.text)
+        response = get_conversation_chain(update, context).predict(human_input=update.message.text)
         if 'New Driver Request:' in response:
             driver_request = response.split('New Driver Request:')[1]
             await find_taxi(update, application.bot, context, driver_request)
@@ -50,7 +50,7 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # update_id = update.update_id
     if cqd.startswith('accept__'):
         active_request_id = cqd.split('__')[1]
-        context.chat_data['active_request_id'] = active_request_id
+        context.bot_data['active_request_ids'][update.effective_chat.id] = active_request_id
         active_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
         driver = update.callback_query.from_user
         text = f'Your ride has been accepted by {driver.first_name}.\nWaiting for them to send their price.'
@@ -62,7 +62,7 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if cqd.startswith('accept_offer'):
         offer_id = cqd.split('__')[1]
 
-        active_request_id = context.chat_data['active_request_id']
+        active_request_id = context.bot_data['active_request_ids'][update.effective_chat.id]
         service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
 
         offer = service_request['offers'][offer_id]

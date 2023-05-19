@@ -32,7 +32,7 @@ def get_matching_ride_request(target_driver_id, bot_data):
     return None
 
 
-def create_ride_request(context: ContextTypes.DEFAULT_TYPE, rider: telegram.User, text: str):
+def create_ride_request(context: ContextTypes.DEFAULT_TYPE, rider: telegram.User, text: str, update: Update):
     request_id = get_random_string()
     ride_request = {
         'id': request_id,
@@ -51,6 +51,10 @@ def create_ride_request(context: ContextTypes.DEFAULT_TYPE, rider: telegram.User
         context.bot_data[RIDE_REQUESTS_KEY] = {}
 
     context.bot_data[RIDE_REQUESTS_KEY][request_id] = ride_request
+    if 'active_request_ids' not in context.bot_data:
+        context.bot_data['active_request_ids'] = {}
+
+    context.bot_data['active_request_ids'][update.effective_chat.id] = request_id
 
     return ride_request
 
@@ -75,10 +79,9 @@ def create_offer(context: ContextTypes.DEFAULT_TYPE,
 
 
 async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE, driver_request):
-    ride_request = create_ride_request(context, update.message.from_user, driver_request)
-
+    ride_request = create_ride_request(context, update.message.from_user, driver_request, update)
     ride_id = ride_request['id']
-    context.chat_data['active_request_id'] = ride_id
+
     await bot.send_message(
         chat_id=update.message.from_user.id,
         text=f"We are looking for drivers for the following request: {driver_request}\n\n"
@@ -114,7 +117,7 @@ async def get_driver_price(chat_id, bot: Bot):
 
 
 async def send_offer_to_client(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.chat_data['active_request_id'] not in context.bot_data[RIDE_REQUESTS_KEY]:
+    if context.bot_data['chat_history'][update.effective_chat.id] not in context.bot_data[RIDE_REQUESTS_KEY]:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="No Driver requests found for this chat. Type /list"
                                             "to see your requests")
@@ -128,7 +131,7 @@ async def send_offer_to_client(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         return None
 
-    active_request_id = context.chat_data['active_request_id']
+    active_request_id = context.bot_data['active_request_ids'][update.effective_chat.id]
     service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
     driver = update.message.from_user
     price = update.message.text

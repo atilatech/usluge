@@ -5,6 +5,7 @@ from langchain.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
+from telegram import Update
 from telegram.ext import ContextTypes
 
 from utils.utils import human_readable_date
@@ -57,10 +58,10 @@ PROMPT = PromptTemplate(
 )
 
 
-def load_chat_memory(context: ContextTypes.DEFAULT_TYPE):
+def load_chat_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-    for chat in context.chat_data.get('history', []):
+    for chat in context.bot_data.get('chat_history', {}).get(update.effective_chat.id, []):
         if 'user' in chat:
             memory.chat_memory.add_user_message(chat['user'])
         elif 'bot' in chat:
@@ -69,7 +70,7 @@ def load_chat_memory(context: ContextTypes.DEFAULT_TYPE):
     return memory
 
 
-def get_conversation_chain(context: ContextTypes.DEFAULT_TYPE):
+def get_conversation_chain(update: Update, context: ContextTypes.DEFAULT_TYPE):
     template_prefix = f"The date is {human_readable_date()}. Your users are in Montenegro."
     conversation_template = template_prefix + """You are a chatbot that helps people book local drivers.
     Very concisely ask them to send you: pick up and drop off location, pickup time and number of people
@@ -92,7 +93,7 @@ def get_conversation_chain(context: ContextTypes.DEFAULT_TYPE):
         llm=OpenAI(),
         prompt=prompt,
         verbose=True,
-        memory=load_chat_memory(context),
+        memory=load_chat_memory(update, context),
     )
     return llm_chain
 
