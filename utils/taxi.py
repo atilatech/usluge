@@ -42,9 +42,9 @@ def create_ride_request(context: ContextTypes.DEFAULT_TYPE, rider: telegram.User
         'response': None,
     }
     if RIDE_REQUESTS_KEY not in context.bot_data:
-        context.bot_data[RIDE_REQUESTS_KEY] = {}
+        context.bot_data[RIDE_REQUESTS_KEY] = []
 
-    context.bot_data[RIDE_REQUESTS_KEY][str(rider.id)] = ride_request
+    context.bot_data[RIDE_REQUESTS_KEY].append(ride_request)
 
     return context.bot_data[RIDE_REQUESTS_KEY]
 
@@ -62,19 +62,20 @@ def update_ride_request_accept_ride(rider_id, driver: telegram.User, context: Co
 
 
 async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE, driver_request):
-    create_ride_request(context, update.message.from_user, driver_request)
+    ride_request = create_ride_request(context, update.message.from_user, driver_request)
 
     await bot.send_message(
         chat_id=update.message.from_user.id,
         text=f"We are looking for drivers for the following request: {driver_request}\n\n"
     )
 
+    ride_id = ride_request['id']
     for driver in drivers:
         print('messaging driver: ', driver)
         print('update.message', driver_request)
         print('context.bot_data', context.bot_data)
-        accept_callback_data = f"accept__{update.message.from_user.id}"
-        decline_callback_data = f"decline__{update.message.from_user.id}"
+        accept_callback_data = f"accept__{ride_id}"
+        decline_callback_data = f"decline__{ride_id}"
         accept_button = telegram.InlineKeyboardButton(
             text='accept ✅',  # text that's shown to the user
             callback_data=accept_callback_data  # text send to the bot when user taps the button
