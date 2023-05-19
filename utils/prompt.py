@@ -1,5 +1,4 @@
 import os
-import pickle
 
 from langchain import LLMChain
 from langchain.llms import OpenAI
@@ -33,15 +32,6 @@ QA_PROMPT = PromptTemplate(template=template, input_variables=["question", "cont
 FILE_DIRECTORY = os.path.dirname(__file__)
 
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-
-
-def get_vectors():
-    # Load the vectors from the pickle file
-    with open(f"{FILE_DIRECTORY}/data.pkl", "rb") as f:
-        vectors = pickle.load(f)
-
-    return vectors
-
 
 prompt_template = """You are a chatbot that helps people find local service providers. 
 Examples of service providers include services such as apartment cleaning, painters, plumbers, hairdressers, etc. 

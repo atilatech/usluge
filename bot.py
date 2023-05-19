@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, PicklePersistence, \
     CallbackQueryHandler
 
-from utils.credentials import BOT_TOKEN, bot_user_name
+from utils.credentials import BOT_TOKEN
 from utils.prompt import get_conversation_chain
 from utils.save_data import save_message_response
 from utils.taxi import find_taxi, get_driver_price, confirm_price_with_rider, get_matching_ride_request, \
