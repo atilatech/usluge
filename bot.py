@@ -35,8 +35,11 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_offer_to_client(update, context)
     else:
         response = get_conversation_chain(update, context).predict(human_input=update.message.text)
-        if 'New Driver Request:' in response:
-            driver_request = response.split('New Driver Request:')[1]
+        if 'New Driver Request:' in response or 'Nova Zahtjev za Vozaca:' in response:
+            if 'New Driver Request:' in response:
+                driver_request = response.split('New Driver Request:')[1]
+            else:
+                driver_request = response.split('Nova Zahtjev za Vozaca:')[1]
             await find_taxi(update, application.bot, context, driver_request)
         else:
             await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
