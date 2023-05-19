@@ -7,10 +7,9 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 
 from utils.credentials import BOT_TOKEN
 from utils.prompt import get_conversation_chain
-from utils.save_data import save_message_response
+from utils.save_data import save_message_response, save_bot_data
 from utils.taxi import find_taxi, get_driver_price, send_offer_to_client
-from utils.utils import RIDE_REQUESTS_KEY, get_do_nothing_button
-import json
+from utils.utils import RIDE_REQUESTS_KEY, get_do_nothing_button, bot_data_file_path
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -27,20 +26,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
            """
     await context.bot.send_message(chat_id=update.message.chat_id,
                                    text=bot_welcome,
-                                   reply_to_message_id=update.message.message_id)
-
-
-async def save_bot_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        with open(f'{bot_data_file_path}.json', 'w') as json_file:
-            json.dump(context.bot_data, json_file, indent=4)
-        message = f"bot_data dumped successfully."
-        print(message)
-    except Exception as e:
-        message = f"An error occurred while dumping bot_data {e}"
-        print(message)
-    await context.bot.send_message(chat_id=update.message.chat_id,
-                                   text=message,
                                    reply_to_message_id=update.message.message_id)
 
 
@@ -137,7 +122,6 @@ async def chat_shared(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 if __name__ == '__main__':
-    bot_data_file_path = "bot_data"
     persistence = PicklePersistence(filepath=bot_data_file_path)
     application = ApplicationBuilder().token(BOT_TOKEN).persistence(persistence).build()
 

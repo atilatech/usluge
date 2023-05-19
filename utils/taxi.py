@@ -8,16 +8,16 @@ from utils.utils import get_random_string, RIDE_REQUESTS_KEY, LIST_COMMAND_BUTTO
     DRIVER_COMMAND_BUTTON
 
 drivers = [
-    # {
-    #     'username': 'IvanKapisoda',
-    #     'first_name': 'Ivan',
-    #     'id': '1642664602',
-    # },
     {
-        'username': 'Tomiwa',
-        'first_name': 'tomiwa1a1',
-        'id': '5238299107',
+        'username': 'IvanKapisoda',
+        'first_name': 'Ivan',
+        'id': '1642664602',
     },
+    # {
+    #     'username': 'Tomiwa',
+    #     'first_name': 'tomiwa1a1',
+    #     'id': '5238299107',
+    # },
 ]
 
 
@@ -77,12 +77,13 @@ def create_offer(context: ContextTypes.DEFAULT_TYPE,
 async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE, driver_request):
     ride_request = create_ride_request(context, update.message.from_user, driver_request)
 
+    ride_id = ride_request['id']
+    context.chat_data['active_request_id'] = ride_id
     await bot.send_message(
         chat_id=update.message.from_user.id,
         text=f"We are looking for drivers for the following request: {driver_request}\n\n"
     )
 
-    ride_id = ride_request['id']
     for driver in drivers:
         print('messaging driver: ', driver)
         print('update.message', driver_request)

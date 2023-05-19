@@ -8,6 +8,8 @@ import telegram
 
 RIDE_REQUESTS_KEY = 'ride_requests'
 
+bot_data_file_path = "bot_data"
+
 
 def get_random_string(length=16):
     # choose from all lowercase letter
