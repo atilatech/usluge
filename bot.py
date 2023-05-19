@@ -34,14 +34,14 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text.isdigit():
         await send_offer_to_client(update, context)
     else:
-        response = get_conversation_chain().predict(human_input=update.message.text)
+        response = get_conversation_chain(context).predict(human_input=update.message.text)
         if 'New Driver Request:' in response:
             driver_request = response.split('New Driver Request:')[1]
             await find_taxi(update, application.bot, context, driver_request)
         else:
             await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
 
-    save_message_response(response, update.message)
+    save_message_response(response, update.message, context)
 
 
 async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):

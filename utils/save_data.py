@@ -8,7 +8,7 @@ from utils.credentials import GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
 from utils.utils import human_readable_date, bot_data_file_path
 
 DATABASE_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/16e70m-8SeM1F2suA7rOunico2ASH5xEa_KwdeFbeqMA" \
-                               "/edit#gid=0"
+                           "/edit#gid=0"
 
 # Authenticate using the loaded credentials
 gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
@@ -17,13 +17,33 @@ gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
 spreadsheet = gc.open_by_url(DATABASE_SPREADSHEET_URL)
 
 
-def save_message_response(response, message):
+def save_message_response(response, message, context: ContextTypes.DEFAULT_TYPE):
     message_response = create_dict_from_message(message)
     message_response['response'] = response
 
     print('message_response', message_response)
     append_message_to_sheet(message_response)
+    append_message_to_chat_history(message_response, context)
     return message_response
+
+
+def append_message_to_chat_history(message, context: ContextTypes.DEFAULT_TYPE):
+    if 'history' not in context.chat_data:
+        context.chat_data['history'] = []
+
+    history = context.chat_data['history']
+
+    # only keep the 10 most recent messages to avoid filling this up too much
+    history.append({
+        'user': message['text'],
+    })
+    history.append({
+        'bot': message['response'],
+    })
+    history = history[:10]
+    context.chat_data['history'] = history
+
+    return history
 
 
 def create_dict_from_message(message: Message):

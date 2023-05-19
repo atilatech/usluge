@@ -5,6 +5,7 @@ from langchain.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
+from telegram.ext import ContextTypes
 
 from utils.utils import human_readable_date
 
@@ -33,8 +34,6 @@ QA_PROMPT = PromptTemplate(template=template, input_variables=["question", "cont
 
 FILE_DIRECTORY = os.path.dirname(__file__)
 
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-
 prompt_template = """You are a chatbot that helps people find local service providers. 
 Examples of service providers include services such as apartment cleaning, painters, plumbers, hairdressers, etc. 
 Try your best to help users answer their questions.
@@ -58,8 +57,19 @@ PROMPT = PromptTemplate(
 )
 
 
-def get_conversation_chain():
+def load_chat_memory(context: ContextTypes.DEFAULT_TYPE):
+    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
+    for chat in context.chat_data.get('history', []):
+        if 'user' in chat:
+            memory.chat_memory.add_user_message(chat['user'])
+        elif 'bot' in chat:
+            memory.chat_memory.add_ai_message(chat['bot'])
+
+    return memory
+
+
+def get_conversation_chain(context: ContextTypes.DEFAULT_TYPE):
     template_prefix = f"The date is {human_readable_date()}. Your users are in Montenegro."
     conversation_template = template_prefix + """You are a chatbot that helps people book local drivers.
     Very concisely ask them to send you: pick up and drop off location, pickup time and number of people
@@ -82,7 +92,7 @@ def get_conversation_chain():
         llm=OpenAI(),
         prompt=prompt,
         verbose=True,
-        memory=memory,
+        memory=load_chat_memory(context),
     )
     return llm_chain
 
