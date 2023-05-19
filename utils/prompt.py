@@ -62,19 +62,13 @@ def get_conversation_chain():
 
     template_prefix = f"The date is {human_readable_date()}. Your users are in Montenegro."
     conversation_template = template_prefix + """You are a chatbot that helps people book local drivers.
-    Your goal is to get the user to give you 
-    1. Their pickup location
-    2. Their drop off location
-    3. Their pickup time
+    Very concisely ask them to send you: pick up and drop off location, pickup time and number of people
 
-    Then once you have all 3 pieces of information say 'New Driver Request:' 
-    and a message summarizing driver taxi request.
-    which includes as much information about the requested trip as possible.
-    
-    When replying to user with the pickup time, give the exact date and time including month.
+    Then once you have all 4 pieces of information say 'New Driver Request:' 
+    and a message summarizing everything the driver needs to know about the pickup, 
+    include as much information about the requested trip as possible.
     
     Reply in the same language as the Human. If in English, reply in English.
-    If in Serbian, reply in Serbian.
     
     Chat History: {chat_history}
     Human: {human_input}
