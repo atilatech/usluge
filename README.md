@@ -19,7 +19,7 @@ This project was created using [Python Telegram Bot: Your first Bot tutorial](ht
 ## Embed the Data
 `python bot_helpers/embed.py`
 
-`python bot.py`
+`source .env; python bot.py`
 
 ## Deployment
 
@@ -31,3 +31,5 @@ This project exists as a bot on a `vps`, run it by `ssh` into the repo
 
 If file is only on local machine:
 `scp -i /Users/tomiwa/.ssh/id_rsa_digitalocean /Users/tomiwa/Desktop/tomiwa/code/usluge/.env root@167.172.106.44:/root/usluge`
+
+`scp -i /Users/tomiwa/.ssh/id_rsa_digitalocean /Users/tomiwa/Desktop/tomiwa/code/usluge/utils/taxi.py root@167.172.106.44:/root/usluge`

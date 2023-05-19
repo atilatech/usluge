@@ -77,6 +77,10 @@ def get_conversation_chain():
     and a message summarizing driver taxi request.
     which includes as much information about the requested trip as possible.
     
+    When including the pickup time, give the exact date and time.
+    
+    Example: Instead of 'next week Wednesday', say: 'next week Wednesday, May 24'
+    
     Reply in the same language as the Human. If in English, reply in English.
     If in Serbian, reply in Serbian.
     

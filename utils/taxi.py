@@ -5,16 +5,16 @@ from telegram.ext import ContextTypes
 from utils.utils import get_random_string, RIDE_REQUESTS_KEY
 
 drivers = [
-    {
-        'username': 'IvanKapisoda',
-        'first_name': 'Ivan',
-        'id': '1642664602',
-    },
     # {
-    #     'username': 'Tomiwa',
-    #     'first_name': 'tomiwa1a1',
-    #     'id': '5238299107',
+    #     'username': 'IvanKapisoda',
+    #     'first_name': 'Ivan',
+    #     'id': '1642664602',
     # },
+    {
+        'username': 'Tomiwa',
+        'first_name': 'tomiwa1a1',
+        'id': '5238299107',
+    },
 ]
 
 
@@ -70,6 +70,7 @@ async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE
     )
 
     for driver in drivers:
+        print('messaging driver: ', driver)
         print('update.message', driver_request)
         print('context.bot_data', context.bot_data)
         accept_callback_data = f"accept__{update.message.from_user.id}"
