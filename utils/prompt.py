@@ -61,7 +61,7 @@ PROMPT = PromptTemplate(
 def load_chat_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-    for chat in context.bot_data.get('chat_history', {}).get(update.effective_chat.id, []):
+    for chat in context.bot_data.get('chat_history', {}).get(str(update.effective_chat.id), []):
         if 'user' in chat:
             memory.chat_memory.add_user_message(chat['user'])
         elif 'bot' in chat:

@@ -50,7 +50,7 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # update_id = update.update_id
     if cqd.startswith('accept__'):
         active_request_id = cqd.split('__')[1]
-        context.bot_data['active_request_ids'][update.effective_chat.id] = active_request_id
+        context.bot_data['active_request_ids'][str(update.effective_chat.id)] = active_request_id
         active_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
         driver = update.callback_query.from_user
         text = f'Your ride has been accepted by {driver.first_name}.\nWaiting for them to send their price.'
@@ -62,7 +62,7 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if cqd.startswith('accept_offer'):
         offer_id = cqd.split('__')[1]
 
-        active_request_id = context.bot_data['active_request_ids'][update.effective_chat.id]
+        active_request_id = context.bot_data['active_request_ids'][str(update.effective_chat.id)]
         service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
 
         offer = service_request['offers'][offer_id]
@@ -114,11 +114,9 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def chat_shared(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
 
-    print('chat_shared', chat_shared)
+    print('chat_shared')
     print('update.message', update.message)
     print('chat_id', chat_id)
-    print('context.bot.get_chat_members(chat_id)', context.bot.get_chat_members(chat_id))
-    print('update.message.new_chat_members', update.message.new_chat_members)
 
 
 if __name__ == '__main__':

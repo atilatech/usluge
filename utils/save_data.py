@@ -10,11 +10,34 @@ from utils.utils import human_readable_date, bot_data_file_path
 DATABASE_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/16e70m-8SeM1F2suA7rOunico2ASH5xEa_KwdeFbeqMA" \
                            "/edit#gid=0"
 
+DRIVERS_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1NXF6HKJg0cKu1DuNv6okH9IG4YAYPh41RuYIEt7XlLk/edit" \
+                          "#gid=450026456"
+
 # Authenticate using the loaded credentials
 gc = gspread.service_account_from_dict(GOOGLE_SERVICE_ACCOUNT_CREDENTIALS)
 
 # Open the Google Spreadsheet by its URL
 spreadsheet = gc.open_by_url(DATABASE_SPREADSHEET_URL)
+
+drivers_spreadsheet = gc.open_by_url(DRIVERS_SPREADSHEET_URL)
+
+
+def get_drivers():
+    sheet = drivers_spreadsheet.get_worksheet_by_id(450026456)
+
+    all_drivers = sheet.get_all_values()
+    keys = all_drivers[0]
+    all_drivers_transform = []
+    for lst in all_drivers[1:]:
+        # Create a dictionary for each list
+        row_dict = {}
+        for i, value in enumerate(lst):
+            # Use the corresponding key for each value
+            key = keys[i]
+            row_dict[key] = value
+        # Add the dictionary to the array
+        all_drivers_transform.append(row_dict)
+    return all_drivers_transform
 
 
 def save_message_response(response, message: Message, context: ContextTypes.DEFAULT_TYPE):
@@ -28,7 +51,6 @@ def save_message_response(response, message: Message, context: ContextTypes.DEFA
 
 
 def append_message_to_chat_history(message, context: ContextTypes.DEFAULT_TYPE):
-
     chat_id = message['chat_id']
 
     if 'chat_history' not in context.bot_data:
@@ -79,7 +101,7 @@ def create_dict_from_message(message: Message):
 
 def append_message_to_sheet(data_to_save):
     # Select the first sheet in the spreadsheet
-    sheet = spreadsheet.get_worksheet(0)
+    sheet = spreadsheet.get_worksheet_by_id(1170045091)
 
     # Get the last row index in the sheet
     last_row_index = len(sheet.get_all_values()) + 1

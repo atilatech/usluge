@@ -4,10 +4,11 @@ import telegram
 from telegram import Bot, Update
 from telegram.ext import ContextTypes
 
+from utils.save_data import get_drivers
 from utils.utils import get_random_string, RIDE_REQUESTS_KEY, LIST_COMMAND_BUTTON, HELP_COMMAND_BUTTON, \
     DRIVER_COMMAND_BUTTON
 
-drivers = [
+drivers_debug = [
     {
         'username': 'IvanKapisoda',
         'first_name': 'Ivan',
@@ -19,6 +20,10 @@ drivers = [
     #     'id': '5238299107',
     # },
 ]
+
+drivers = get_drivers()
+
+print('drivers', drivers)
 
 
 def get_matching_ride_request(target_driver_id, bot_data):
@@ -54,7 +59,7 @@ def create_ride_request(context: ContextTypes.DEFAULT_TYPE, rider: telegram.User
     if 'active_request_ids' not in context.bot_data:
         context.bot_data['active_request_ids'] = {}
 
-    context.bot_data['active_request_ids'][update.effective_chat.id] = request_id
+    context.bot_data['active_request_ids'][str(update.effective_chat.id)] = request_id
 
     return ride_request
 
@@ -88,6 +93,9 @@ async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE
     )
 
     for driver in drivers:
+        if not driver.get('id', None):
+            print(f'No ID for driver: {driver}')
+            continue
         print('messaging driver: ', driver)
         print('update.message', driver_request)
         print('context.bot_data', context.bot_data)
@@ -117,7 +125,7 @@ async def get_driver_price(chat_id, bot: Bot):
 
 
 async def send_offer_to_client(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.bot_data['chat_history'][update.effective_chat.id] not in context.bot_data[RIDE_REQUESTS_KEY]:
+    if str(update.effective_chat.id) not in context.bot_data['active_request_ids']:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="No Driver requests found for this chat. Type /list"
                                             "to see your requests")
@@ -131,7 +139,7 @@ async def send_offer_to_client(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         return None
 
-    active_request_id = context.bot_data['active_request_ids'][update.effective_chat.id]
+    active_request_id = context.bot_data['active_request_ids'][str(update.effective_chat.id)]
     service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
     driver = update.message.from_user
     price = update.message.text
