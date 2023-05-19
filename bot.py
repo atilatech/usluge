@@ -1,5 +1,6 @@
 import logging
 
+import telegram
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, PicklePersistence, \
     CallbackQueryHandler
@@ -7,9 +8,8 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 from utils.credentials import BOT_TOKEN
 from utils.prompt import get_conversation_chain
 from utils.save_data import save_message_response
-from utils.taxi import find_taxi, get_driver_price, confirm_price_with_rider, get_matching_ride_request, \
-    update_ride_request_accept_ride
-from utils.utils import RIDE_REQUESTS_KEY
+from utils.taxi import find_taxi, get_driver_price, send_offer_to_client
+from utils.utils import RIDE_REQUESTS_KEY, get_do_nothing_button
 import json
 
 logging.basicConfig(
@@ -47,17 +47,7 @@ async def save_bot_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = ''
     if update.message.text.isdigit():
-        ride_request = get_matching_ride_request(str(update.effective_chat.id), context.bot_data)
-
-        print('get_matching_ride_request', ride_request)
-
-        rider_id = ride_request['rider']['id']
-        context.bot_data[RIDE_REQUESTS_KEY][str(rider_id)]['response'] = update.message.text
-        await confirm_price_with_rider(ride_request['request'],
-                                       update.message.text,
-                                       rider_id,
-                                       ride_request['driver']['first_name'],
-                                       context.bot)
+        await send_offer_to_client(update, context)
     else:
         response = get_conversation_chain().predict(human_input=update.message.text)
         if 'New Driver Request:' in response:
@@ -74,18 +64,32 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # message_id = update.callback_query.message.message_id
     # update_id = update.update_id
     if cqd.startswith('accept__'):
-        requester_user_id = cqd.split('__')[1]
+        active_request_id = cqd.split('__')[1]
+        context.chat_data['active_request_id'] = active_request_id
+        active_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
         driver = update.callback_query.from_user
         text = f'Your ride has been accepted by {driver.first_name}.\nWaiting for them to send their price.'
-        print('requester_user_id, driver', requester_user_id, driver)
-        update_ride_request_accept_ride(requester_user_id, driver, context)
+        print('request_id, driver', active_request_id, driver)
         print('context.bot_data', context.bot_data)
-        await context.bot.send_message(chat_id=requester_user_id, text=text)
+        await context.bot.send_message(chat_id=active_request['rider']['id'], text=text)
         await get_driver_price(driver.id, context.bot)
 
     if cqd.startswith('accept_offer'):
-        rider = update.callback_query.from_user
-        ride_request = context.bot_data[RIDE_REQUESTS_KEY][str(rider.id)]
+        offer_id = cqd.split('__')[1]
+
+        active_request_id = context.chat_data['active_request_id']
+        service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
+
+        offer = service_request['offers'][offer_id]
+
+        driver = offer['driver']
+        price = offer['price']
+
+        # set driver and price for the service request to the value from the driver
+        context.bot_data[RIDE_REQUESTS_KEY][active_request_id]['driver'] = driver
+        context.bot_data[RIDE_REQUESTS_KEY][active_request_id]['price'] = price
+
+        service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
 
         message_template = "Taxi Confirmed! {first_name} (@{username}) will message " \
                            "you shortly to arrange a pickup.\n\n" \
@@ -95,29 +99,31 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # 'Tip: Add @uslugebot to your chat with {first_name} to instantly add trip details and
         # price.'
 
-        rider_message = message_template.format(first_name=ride_request['driver']['first_name'],
-                                                username=ride_request['driver']['username'],
-                                                request=ride_request['request'],
-                                                response=ride_request['response'])
+        rider_message = message_template.format(first_name=service_request['driver']['first_name'],
+                                                username=service_request['driver']['username'],
+                                                request=service_request['request'],
+                                                response=service_request['price'])
 
-        driver_message = message_template.format(first_name=ride_request['rider']['first_name'],
-                                                 username=ride_request['rider']['username'],
-                                                 request=ride_request['request'],
-                                                 response=ride_request['response'])
+        driver_message = message_template.format(first_name=service_request['rider']['first_name'],
+                                                 username=service_request['rider']['username'],
+                                                 request=service_request['request'],
+                                                 response=service_request['price'])
 
         print('rider_message, driver_message', rider_message, driver_message)
-        await context.bot.send_message(chat_id=ride_request['rider']['id'], text=rider_message)
-        await context.bot.send_message(chat_id=ride_request['driver']['id'], text=driver_message)
+        await context.bot.send_message(chat_id=service_request['rider']['id'], text=rider_message)
+        await context.bot.send_message(chat_id=service_request['driver']['id'], text=driver_message)
 
     if cqd.startswith('decline_offer'):
-        rider = update.callback_query.from_user
-        ride_request = context.bot_data[RIDE_REQUESTS_KEY][str(rider.id)]
-
         text = "Offer was declined"
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
-        await context.bot.send_message(chat_id=ride_request['rider']['id'], text=text)
-        await context.bot.send_message(chat_id=ride_request['driver']['id'], text=text)
-        context.bot_data[RIDE_REQUESTS_KEY][str(rider.id)]['driver'] = None
+    reply_markup = None
+    if cqd.startswith('accept'):
+        reply_markup = telegram.InlineKeyboardMarkup([[get_do_nothing_button('offer was accepted')]])
+    elif cqd.startswith('decline'):
+        reply_markup = telegram.InlineKeyboardMarkup([[get_do_nothing_button('offer was declined')]])
+
+    await update.callback_query.edit_message_reply_markup(reply_markup)
 
 
 async def chat_shared(update: Update, context: ContextTypes.DEFAULT_TYPE):

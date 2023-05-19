@@ -1,8 +1,11 @@
+import time
+
 import telegram
 from telegram import Bot, Update
 from telegram.ext import ContextTypes
 
-from utils.utils import get_random_string, RIDE_REQUESTS_KEY
+from utils.utils import get_random_string, RIDE_REQUESTS_KEY, LIST_COMMAND_BUTTON, HELP_COMMAND_BUTTON, \
+    DRIVER_COMMAND_BUTTON
 
 drivers = [
     # {
@@ -30,35 +33,45 @@ def get_matching_ride_request(target_driver_id, bot_data):
 
 
 def create_ride_request(context: ContextTypes.DEFAULT_TYPE, rider: telegram.User, text: str):
+    request_id = get_random_string()
     ride_request = {
-        'id': get_random_string(),
+        'id': request_id,
         'rider': {
             'first_name': rider.first_name,
             'username': rider.username,
-            'id': str(rider.id),
+            'id': rider.id,
         },
         'driver': None,
         'request': text,
-        'response': None,
+        'price': None,
+        'offers': {},
+        'date_created': int(time.time())
     }
     if RIDE_REQUESTS_KEY not in context.bot_data:
-        context.bot_data[RIDE_REQUESTS_KEY] = []
+        context.bot_data[RIDE_REQUESTS_KEY] = {}
 
-    context.bot_data[RIDE_REQUESTS_KEY].append(ride_request)
+    context.bot_data[RIDE_REQUESTS_KEY][request_id] = ride_request
 
-    return context.bot_data[RIDE_REQUESTS_KEY]
+    return ride_request
 
 
-def update_ride_request_accept_ride(rider_id, driver: telegram.User, context: ContextTypes.DEFAULT_TYPE):
-    driver = {
-        'first_name': driver.first_name,
-        'username': driver.username,
-        'id': str(driver.id),
+def create_offer(context: ContextTypes.DEFAULT_TYPE,
+                 service_request_id: str,
+                 driver: telegram.User, price: str | int | float):
+    offer_id = get_random_string()
+
+    offer = {
+        'id': offer_id,
+        'driver': {
+            'first_name': driver.first_name,
+            'username': driver.username,
+            'id': driver.id,
+        },
+        'price': price,
     }
 
-    context.bot_data[RIDE_REQUESTS_KEY][rider_id]['driver'] = driver
-
-    return context.bot_data[RIDE_REQUESTS_KEY]
+    context.bot_data[RIDE_REQUESTS_KEY][service_request_id]['offers'][offer_id] = offer
+    return offer
 
 
 async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE, driver_request):
@@ -99,20 +112,43 @@ async def get_driver_price(chat_id, bot: Bot):
     )
 
 
-async def confirm_price_with_rider(request, amount, rider_id, driver_name, bot):
-    accept_callback_data = f"accept_offer"
-    decline_callback_data = f"decline_offer"
+async def send_offer_to_client(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.chat_data['active_request_id'] not in context.bot_data[RIDE_REQUESTS_KEY]:
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="No Driver requests found for this chat. Type /list"
+                                            "to see your requests")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"No Driver requests found for this chat. Type 'driver' to book a driver,"
+                 f" /list to see your driver requests or /help",
+            reply_markup=telegram.InlineKeyboardMarkup([[DRIVER_COMMAND_BUTTON,
+                                                         LIST_COMMAND_BUTTON,
+                                                         HELP_COMMAND_BUTTON]])
+        )
+        return None
 
+    active_request_id = context.chat_data['active_request_id']
+    service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
+    driver = update.message.from_user
+    price = update.message.text
+    offer = create_offer(context, service_request['id'], driver, price)
+
+    accept_callback_data = f"accept_offer__{offer['id']}"
+    decline_callback_data = f"decline_offer__{offer['id']}"
+
+    print('accept_callback_data', accept_callback_data)
     accept_button = telegram.InlineKeyboardButton(
         text='accept ✅',  # text that's shown to the user
         callback_data=accept_callback_data  # text send to the bot when user taps the button
     )
     decline_button = telegram.InlineKeyboardButton(
         text='decline 🚫',  # text that's shown to the user
-        callback_data=decline_callback_data  # text send to the bot when user taps the button
+        callback_data=decline_callback_data  # text send to the bot when user taps the button,
     )
-    await bot.send_message(
-        chat_id=rider_id,
-        text=f"Taxi Offer from {driver_name}: {amount} euros for '{request}'",
+    await context.bot.send_message(
+        chat_id=service_request['rider']['id'],
+        text=f"Taxi Offer from {driver['first_name']}: {price} euros for '{service_request['request']}'",
         reply_markup=telegram.InlineKeyboardMarkup([[accept_button, decline_button]])
     )
+
+    return service_request

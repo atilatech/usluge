@@ -6,6 +6,8 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 
+from utils.utils import human_readable_date
+
 _template = """Given the following conversation and a follow-up question, 
 rephrase the follow-up question to be a standalone question.
 You can assume the question is about finding service providers in Montenegro.
@@ -57,7 +59,9 @@ PROMPT = PromptTemplate(
 
 
 def get_conversation_chain():
-    conversation_template = """You are a chatbot that helps people book local drivers.
+
+    template_prefix = f"The date is {human_readable_date()}. Your users are in Montenegro."
+    conversation_template = template_prefix + """You are a chatbot that helps people book local drivers.
     Your goal is to get the user to give you 
     1. Their pickup location
     2. Their drop off location
@@ -67,9 +71,7 @@ def get_conversation_chain():
     and a message summarizing driver taxi request.
     which includes as much information about the requested trip as possible.
     
-    When including the pickup time, give the exact date and time.
-    
-    Example: Instead of 'next week Wednesday', say: 'next week Wednesday, May 24'
+    When replying to user with the pickup time, give the exact date and time including month.
     
     Reply in the same language as the Human. If in English, reply in English.
     If in Serbian, reply in Serbian.

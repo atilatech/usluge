@@ -1,10 +1,8 @@
-from datetime import datetime
-
 import gspread
-import pytz
 from telegram import Message
 
 from utils.credentials import GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
+from utils.utils import human_readable_date
 
 DATABASE_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/16e70m-8SeM1F2suA7rOunico2ASH5xEa_KwdeFbeqMA" \
                                "/edit#gid=0"
@@ -35,16 +33,6 @@ def create_dict_from_message(message: Message):
     username = message.from_user.username
     unix_timestamp = message.date.timestamp()
 
-    datetime_object = datetime.fromtimestamp(unix_timestamp)
-    # Convert the datetime object to GMT+2
-    # Specify the Montenegro timezone
-    timezone = pytz.timezone('Europe/Podgorica')
-    # Convert datetime_object to Montenegro timezone
-    datetime_object_gmt2 = datetime_object.astimezone(timezone)
-
-    # Format the datetime object as a human-readable string
-    human_readable_date = datetime_object_gmt2.strftime('%A, %B %d, %Y %I:%M %p')
-
     message_data = {
         'text': text,
         'chat_id': chat_id,
@@ -54,7 +42,7 @@ def create_dict_from_message(message: Message):
         'last_name': last_name,
         'username': username,
         'date': unix_timestamp,
-        'human_readable_date': human_readable_date
+        'human_readable_date': human_readable_date(unix_timestamp)
     }
 
     return message_data
