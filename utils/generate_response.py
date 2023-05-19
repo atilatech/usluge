@@ -1,8 +1,8 @@
 import os
 import openai
-from bot_helpers.credentials import OPENAI_API_KEY
-from bot_helpers.embed import get_vectors
-from bot_helpers.prompt import get_chain
+from utils.credentials import OPENAI_API_KEY
+from utils.embed import get_vectors
+from utils.prompt import get_chain
 
 # Set up OpenAI API credentials
 openai.api_key = OPENAI_API_KEY

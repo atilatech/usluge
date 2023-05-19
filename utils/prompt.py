@@ -1,6 +1,7 @@
 import os
 import pickle
 
+from langchain import LLMChain
 from langchain.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
@@ -63,6 +64,37 @@ Answer in Markdown:"""
 PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["question", "context"]
 )
+
+
+def get_conversation_chain():
+    conversation_template = """You are a chatbot that helps people book local drivers.
+    Your goal is to get the user to give you 
+    1. Their pickup location
+    2. Their drop off location
+    3. Their pickup time
+
+    Then once you have all 3 pieces of information say 'New Driver Request:' 
+    and a message summarizing driver taxi request.
+    which includes as much information about the requested trip as possible.
+    
+    Reply in the same language as the Human. If in English, reply in English.
+    If in Serbian, reply in Serbian.
+    
+    Chat History: {chat_history}
+    Human: {human_input}
+    Chatbot:"""
+
+    prompt = PromptTemplate(
+        input_variables=["chat_history", "human_input"],
+        template=conversation_template
+    )
+    llm_chain = LLMChain(
+        llm=OpenAI(),
+        prompt=prompt,
+        verbose=True,
+        memory=memory,
+    )
+    return llm_chain
 
 
 def get_chain(vectors):
