@@ -43,22 +43,19 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     if message_text.isdigit():
         ride_request_id = database['active_request_ids'].find_one({
-            'chat_id': update.effective_chat.id})
+            'chat_id': str(update.effective_chat.id)})
         await send_offer_to_rider(message_text, user, ride_request_id['request_id'])
     else:
-        # Replace AI logic with a simple if statement if we need to save on LLM costs or LLM logic is not working
-        # if len(message_text.split(' ')) < 4:
-        enough_info_to_make_request = check_enough_info_to_make_request(message_text)
-        if ai_true_key in enough_info_to_make_request.lower():
-
+        if len(message_text.split(' ')) < 4:
+            message_text = f"Please send the following information: {request_requirements}"
+            await context.bot.send_message(chat_id=str(update.effective_chat.id), text=message_text)
+        else:
             await context.bot.send_message(
                 chat_id=update.message.from_user.id,
                 text=f"We are looking for drivers for your request: {message_text}\n\n"
                      f"We'll let you know as soon as we receive an order."
             )
-            await send_driver_requests(update.effective_chat.id, user, context)
-        else:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=enough_info_to_make_request)
+            await send_driver_requests(str(update.effective_chat.id), user, message_text)
 
     save_message_response(response, update.message, context)
 
@@ -72,8 +69,8 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(ride_request)
 
         database['active_request_ids'].update_one(
-            {'chat_id': update.effective_chat.id},
-            {'$set': {'chat_id': update.effective_chat.id, 'request_id': ride_request['id']}},
+            {'chat_id': str(update.effective_chat.id)},
+            {'$set': {'chat_id': str(update.effective_chat.id), 'request_id': ride_request['id']}},
             upsert=True
         )
         driver = {
@@ -85,11 +82,11 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if cqd.startswith('accept_offer'):
         offer_id = cqd.split('__')[1]
-        await notify_driver_rider_accepts_offer(update.effective_chat.id, offer_id)
+        await notify_driver_rider_accepts_offer(str(update.effective_chat.id), offer_id)
 
     if cqd.startswith('decline_offer'):
         text = "Offer was declined"
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+        await context.bot.send_message(chat_id=str(update.effective_chat.id), text=text)
 
     reply_markup = None
     if cqd.startswith('accept'):
@@ -102,7 +99,7 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def chat_shared(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.message.chat_id
+    chat_id = str(update.message.chat_id)
 
     print('chat_shared')
     print('update.message', update.message)

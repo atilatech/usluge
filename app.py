@@ -59,7 +59,7 @@ async def whatsapp():
                     }
                     await driver_accepts_rider_request(ride_request, driver)
         else:
-            active_request_id = database['active_request_ids'].find({
+            active_request_id = database['active_request_ids'].find_one({
                 'chat_id': incoming_number})
 
             driver = {
