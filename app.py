@@ -1,3 +1,5 @@
+import asyncio
+
 from flask import Flask, request
 
 from utils.ai import check_enough_info_to_make_request, ai_true_key
@@ -91,6 +93,9 @@ async def whatsapp():
     return 'ok'
 
 
+async def run_flask_app():
+    app.run(threaded=True)
+
 if __name__ == '__main__':
-    # send_whatsapp_message('testing', '+19058758867')
-    app.run(debug=True)
+    # Run the Flask app asynchronously
+    asyncio.run(run_flask_app())
