@@ -23,8 +23,6 @@ drivers_debug = [
 
 drivers = get_drivers()
 
-print('drivers', drivers)
-
 
 def get_matching_ride_request(target_driver_id, bot_data):
     ride_requests = bot_data[RIDE_REQUESTS_KEY]

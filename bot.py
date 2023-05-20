@@ -6,7 +6,6 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
     CallbackQueryHandler
 
 from utils.credentials import BOT_TOKEN
-from utils.prompt import get_conversation_chain
 from utils.save_data import save_message_response, save_bot_data
 from utils.taxi import find_taxi, get_driver_price, send_offer_to_client
 from utils.utils import RIDE_REQUESTS_KEY, get_do_nothing_button, bot_data_file_path
@@ -16,13 +15,15 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+request_requirements = "pickup and drop off location, pickup time and number of people"
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    bot_welcome = """
-           Book a driver for Edcon and Luštica\n\n(Taxis run between Chedi, Lustica Bay and Podgorica).
-           Start your sentence with 'taxi' and then your pickup and drop off location.
+    bot_welcome = f"""
+           Book a driver in Montenegro.
+           Please include: {request_requirements}.
            Example:\n
-           Taxi from Chedi hotel lustica bay to UDG podgorica
+           pickup from Chedi hotel lustica bay to UDG podgorica, 5pm today, 3 people
            """
     await context.bot.send_message(chat_id=update.message.chat_id,
                                    text=bot_welcome,
@@ -31,18 +32,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = ''
-    if update.message.text.isdigit():
+    message_text = update.message.text
+    if message_text.isdigit():
         await send_offer_to_client(update, context)
     else:
-        response = get_conversation_chain(update, context).predict(human_input=update.message.text)
-        if 'New Driver Request:' in response or 'Nova Zahtjev za Vozaca:' in response:
-            if 'New Driver Request:' in response:
-                driver_request = response.split('New Driver Request:')[1]
-            else:
-                driver_request = response.split('Nova Zahtjev za Vozaca:')[1]
-            await find_taxi(update, application.bot, context, driver_request)
-        else:
+        if len(message_text.split(' ')) < 4:
+            response = f"Please provide more details about the service you need: {request_requirements}"
             await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
+        else:
+            await find_taxi(update, application.bot, context, message_text)
 
     save_message_response(response, update.message, context)
 
@@ -126,20 +124,13 @@ if __name__ == '__main__':
     persistence = PicklePersistence(filepath=bot_data_file_path)
     application = ApplicationBuilder().token(BOT_TOKEN).persistence(persistence).build()
 
-    start_handler = CommandHandler('start', start)
-    application.add_handler(start_handler)
+    application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('save', save_bot_data))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), chat))
+    application.add_handler(CallbackQueryHandler(accept_ride))
 
-    chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
-    application.add_handler(chat_handler)
-
-    accept_ride_handler = CallbackQueryHandler(accept_ride)
-    application.add_handler(accept_ride_handler)
-
-    new_message_handler = CallbackQueryHandler(accept_ride)
-    chat_shared_handler = MessageHandler(filters.StatusUpdate.CHAT_SHARED |
-                                         filters.StatusUpdate.CHAT_CREATED,
-                                         chat_shared)
-    application.add_handler(chat_shared_handler)
+    application.add_handler(MessageHandler(filters.StatusUpdate.CHAT_SHARED |
+                                           filters.StatusUpdate.CHAT_CREATED,
+                                           chat_shared))
 
     application.run_polling()
