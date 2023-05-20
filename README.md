@@ -46,3 +46,7 @@ If file is only on local machine:
 ps aux | grep python
 
 `kill 1234`
+
+### Deployment - Heroku
+
+`git push heroku master`
