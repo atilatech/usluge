@@ -5,17 +5,16 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, PicklePersistence, \
     CallbackQueryHandler
 
+from utils.ai import check_enough_info_to_make_request, ai_true_key
 from utils.credentials import BOT_TOKEN
 from utils.save_data import save_message_response, save_bot_data
 from utils.taxi import find_taxi, get_driver_price, send_offer_to_client
-from utils.utils import RIDE_REQUESTS_KEY, get_do_nothing_button, bot_data_file_path
+from utils.utils import RIDE_REQUESTS_KEY, get_do_nothing_button, bot_data_file_path, request_requirements
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-
-request_requirements = "pickup and drop off location, pickup time and number of people"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -36,11 +35,13 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message_text.isdigit():
         await send_offer_to_client(update, context)
     else:
-        if len(message_text.split(' ')) < 4:
-            response = f"Please provide more details about the service you need: {request_requirements}"
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
-        else:
+        # Replace AI logic with a simple if statement if we need to save on LLM costs or LLM logic is not working
+        # if len(message_text.split(' ')) < 4:
+        enough_info_to_make_request = check_enough_info_to_make_request(message_text)
+        if ai_true_key in enough_info_to_make_request.lower():
             await find_taxi(update, application.bot, context, message_text)
+        else:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=enough_info_to_make_request)
 
     save_message_response(response, update.message, context)
 
@@ -56,7 +57,6 @@ async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
         driver = update.callback_query.from_user
         text = f'Your ride has been accepted by {driver.first_name}.\nWaiting for them to send their price.'
         print('request_id, driver', active_request_id, driver)
-        print('context.bot_data', context.bot_data)
         await context.bot.send_message(chat_id=active_request['rider']['id'], text=text)
         await get_driver_price(driver.id, context.bot)
 

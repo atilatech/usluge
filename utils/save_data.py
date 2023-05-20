@@ -46,7 +46,7 @@ def save_message_response(response, message: Message, context: ContextTypes.DEFA
 
     print('message_response', message_response)
     append_message_to_sheet(message_response)
-    append_message_to_chat_history(message_response, context)
+    # append_message_to_chat_history(message_response, context)
     return message_response
 
 

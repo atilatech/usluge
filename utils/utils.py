@@ -10,6 +10,8 @@ RIDE_REQUESTS_KEY = 'ride_requests'
 
 bot_data_file_path = "bot_data"
 
+request_requirements = "pickup and drop off location, pickup time and number of people"
+
 
 def get_random_string(length=16):
     # choose from all lowercase letter
