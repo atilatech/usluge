@@ -5,11 +5,13 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, PicklePersistence, \
     CallbackQueryHandler
 
+from utils.ai import check_enough_info_to_make_request, ai_true_key
 from utils.credentials import BOT_TOKEN
-from utils.prompt import get_conversation_chain
+from utils.database import database
 from utils.save_data import save_message_response, save_bot_data
-from utils.taxi import find_taxi, get_driver_price, send_offer_to_client
-from utils.utils import RIDE_REQUESTS_KEY, get_do_nothing_button, bot_data_file_path
+from utils.taxi import send_driver_requests, send_offer_to_rider, notify_driver_rider_accepts_offer, \
+    driver_accepts_rider_request
+from utils.utils import get_do_nothing_button, bot_data_file_path, request_requirements
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -18,11 +20,11 @@ logging.basicConfig(
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    bot_welcome = """
-           Book a driver for Edcon and Luštica\n\n(Taxis run between Chedi, Lustica Bay and Podgorica).
-           Start your sentence with 'taxi' and then your pickup and drop off location.
+    bot_welcome = f"""
+           Book a driver in Montenegro.
+           Please include: {request_requirements}.
            Example:\n
-           Taxi from Chedi hotel lustica bay to UDG podgorica
+           pickup from Chedi hotel lustica bay to UDG podgorica, 5pm today, 3 people
            """
     await context.bot.send_message(chat_id=update.message.chat_id,
                                    text=bot_welcome,
@@ -31,91 +33,73 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = ''
-    if update.message.text.isdigit():
-        await send_offer_to_client(update, context)
+    message_text = update.message.text
+
+    user = {
+        'first_name': update.message.from_user.first_name,
+        'telegram_username': update.message.from_user.username,
+        'telegram_id': update.message.from_user.id,
+        'source': 'telegram'
+    }
+    if message_text.isdigit():
+        ride_request_id = database['active_request_ids'].find_one({
+            'chat_id': str(update.effective_chat.id)})
+        await send_offer_to_rider(message_text, user, ride_request_id['request_id'])
     else:
-        response = get_conversation_chain(update, context).predict(human_input=update.message.text)
-        if 'New Driver Request:' in response or 'Nova Zahtjev za Vozaca:' in response:
-            if 'New Driver Request:' in response:
-                driver_request = response.split('New Driver Request:')[1]
-            else:
-                driver_request = response.split('Nova Zahtjev za Vozaca:')[1]
-            await find_taxi(update, application.bot, context, driver_request)
+        if len(message_text.split(' ')) < 4:
+            message_text = f"Please send the following information: {request_requirements}"
+            await context.bot.send_message(chat_id=str(update.effective_chat.id), text=message_text)
         else:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
+            await context.bot.send_message(
+                chat_id=update.message.from_user.id,
+                text=f"We are looking for drivers for your request: {message_text}\n\n"
+                     f"We'll let you know as soon as we receive an order."
+            )
+            await send_driver_requests(str(update.effective_chat.id), user, message_text)
 
     save_message_response(response, update.message, context)
 
 
 async def accept_ride(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cqd = update.callback_query.data
-    # message_id = update.callback_query.message.message_id
-    # update_id = update.update_id
     if cqd.startswith('accept__'):
-        active_request_id = cqd.split('__')[1]
-        context.bot_data['active_request_ids'][str(update.effective_chat.id)] = active_request_id
-        active_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
-        driver = update.callback_query.from_user
-        text = f'Your ride has been accepted by {driver.first_name}.\nWaiting for them to send their price.'
-        print('request_id, driver', active_request_id, driver)
-        print('context.bot_data', context.bot_data)
-        await context.bot.send_message(chat_id=active_request['rider']['id'], text=text)
-        await get_driver_price(driver.id, context.bot)
+        # driver accepts rider's request
+        ride_request_id = cqd.split('__')[1]
+        ride_request = database['ride_requests'].find_one({'id': ride_request_id})
+        print(ride_request)
+
+        database['active_request_ids'].update_one(
+            {'chat_id': str(update.effective_chat.id)},
+            {'$set': {'chat_id': str(update.effective_chat.id), 'request_id': ride_request['id']}},
+            upsert=True
+        )
+        driver = {
+            'first_name': update.callback_query.from_user.first_name,
+            'telegram_username': update.callback_query.from_user.username,
+            'telegram_id': update.callback_query.from_user.id
+        }
+        await driver_accepts_rider_request(ride_request, driver)
 
     if cqd.startswith('accept_offer'):
         offer_id = cqd.split('__')[1]
-
-        active_request_id = context.bot_data['active_request_ids'][str(update.effective_chat.id)]
-        service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
-
-        offer = service_request['offers'][offer_id]
-
-        driver = offer['driver']
-        price = offer['price']
-
-        # set driver and price for the service request to the value from the driver
-        context.bot_data[RIDE_REQUESTS_KEY][active_request_id]['driver'] = driver
-        context.bot_data[RIDE_REQUESTS_KEY][active_request_id]['price'] = price
-
-        service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
-
-        message_template = "Taxi Confirmed! {first_name} (@{username}) will message " \
-                           "you shortly to arrange a pickup.\n\n" \
-                           "Details: {request} \n" \
-                           "Price: {response} Euros \n" \
-                           'You can also send them a message: https://t.me/{username}.\n' \
-            # 'Tip: Add @uslugebot to your chat with {first_name} to instantly add trip details and
-        # price.'
-
-        rider_message = message_template.format(first_name=service_request['driver']['first_name'],
-                                                username=service_request['driver']['username'],
-                                                request=service_request['request'],
-                                                response=service_request['price'])
-
-        driver_message = message_template.format(first_name=service_request['rider']['first_name'],
-                                                 username=service_request['rider']['username'],
-                                                 request=service_request['request'],
-                                                 response=service_request['price'])
-
-        print('rider_message, driver_message', rider_message, driver_message)
-        await context.bot.send_message(chat_id=service_request['rider']['id'], text=rider_message)
-        await context.bot.send_message(chat_id=service_request['driver']['id'], text=driver_message)
+        await notify_driver_rider_accepts_offer(str(update.effective_chat.id), offer_id)
 
     if cqd.startswith('decline_offer'):
         text = "Offer was declined"
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+        await context.bot.send_message(chat_id=str(update.effective_chat.id), text=text)
 
     reply_markup = None
     if cqd.startswith('accept'):
-        reply_markup = telegram.InlineKeyboardMarkup([[get_do_nothing_button('offer was accepted')]])
+        # driver accepts rider's request
+        reply_markup = telegram.InlineKeyboardMarkup([[get_do_nothing_button('request was accepted')]])
     elif cqd.startswith('decline'):
-        reply_markup = telegram.InlineKeyboardMarkup([[get_do_nothing_button('offer was declined')]])
+        reply_markup = telegram.InlineKeyboardMarkup([[get_do_nothing_button('request was declined')]])
 
     await update.callback_query.edit_message_reply_markup(reply_markup)
 
 
 async def chat_shared(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.message.chat_id
+    chat_id = str(update.message.chat_id)
 
     print('chat_shared')
     print('update.message', update.message)
@@ -126,20 +110,13 @@ if __name__ == '__main__':
     persistence = PicklePersistence(filepath=bot_data_file_path)
     application = ApplicationBuilder().token(BOT_TOKEN).persistence(persistence).build()
 
-    start_handler = CommandHandler('start', start)
-    application.add_handler(start_handler)
+    application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('save', save_bot_data))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), chat))
+    application.add_handler(CallbackQueryHandler(accept_ride))
 
-    chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
-    application.add_handler(chat_handler)
-
-    accept_ride_handler = CallbackQueryHandler(accept_ride)
-    application.add_handler(accept_ride_handler)
-
-    new_message_handler = CallbackQueryHandler(accept_ride)
-    chat_shared_handler = MessageHandler(filters.StatusUpdate.CHAT_SHARED |
-                                         filters.StatusUpdate.CHAT_CREATED,
-                                         chat_shared)
-    application.add_handler(chat_shared_handler)
+    application.add_handler(MessageHandler(filters.StatusUpdate.CHAT_SHARED |
+                                           filters.StatusUpdate.CHAT_CREATED,
+                                           chat_shared))
 
     application.run_polling()

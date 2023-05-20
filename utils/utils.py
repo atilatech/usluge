@@ -10,10 +10,14 @@ RIDE_REQUESTS_KEY = 'ride_requests'
 
 bot_data_file_path = "bot_data"
 
+request_requirements = "pickup and drop off location, pickup time and number of people"
 
-def get_random_string(length=16):
+
+def get_random_string(length=16, options=None):
     # choose from all lowercase letter
-    options = string.ascii_lowercase + string.digits
+    if options is None:
+        options = string.ascii_lowercase + string.digits
+
     result_str = ''.join(random.choice(options) for i in range(length))
     print("Random string of length", length, "is:", result_str)
     return result_str
