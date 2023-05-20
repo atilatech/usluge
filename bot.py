@@ -5,7 +5,6 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, PicklePersistence, \
     CallbackQueryHandler
 
-from utils.ai import check_enough_info_to_make_request, ai_true_key
 from utils.credentials import BOT_TOKEN
 from utils.database import database
 from utils.save_data import save_message_response, save_bot_data

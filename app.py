@@ -2,11 +2,11 @@ import asyncio
 
 from flask import Flask, request
 
-from utils.ai import check_enough_info_to_make_request, ai_true_key
 from utils.credentials import WHATSAPP_NUMBER
 from utils.database import database
 from utils.taxi import send_driver_requests, send_offer_to_rider, driver_accepts_rider_request, \
     notify_driver_rider_accepts_offer
+from utils.utils import request_requirements
 from utils.whatsapp import send_whatsapp_message
 import datetime
 
@@ -73,9 +73,9 @@ async def whatsapp():
             send_whatsapp_message('Your offer has been sent', incoming_number)
 
     else:
-        enough_info_to_make_request = check_enough_info_to_make_request(incoming_msg)
-
-        if ai_true_key in enough_info_to_make_request:
+        if len(incoming_msg.split(' ')) < 4:
+            reply = f"Please send the following information: {request_requirements}"
+        else:
             reply = f"We are looking for drivers for your request: {incoming_msg}\n\n"
             f"We'll let you know as soon as we receive a driver."
             chat_id = incoming_number
@@ -85,9 +85,6 @@ async def whatsapp():
                 'source': 'whatsapp'
             }
             await send_driver_requests(chat_id, rider, incoming_msg)
-        else:
-            reply = enough_info_to_make_request
-
         send_whatsapp_message(reply, incoming_number)
 
     return 'ok'
