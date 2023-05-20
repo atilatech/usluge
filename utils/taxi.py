@@ -1,28 +1,27 @@
 import string
 import time
-from collections import defaultdict
 
 import telegram
-from telegram import Bot, Update
-from telegram.ext import ContextTypes
 
-from utils.credentials import BOT_TOKEN
 from utils.database import database
+from utils.save_data import DATABASE_SPREADSHEET_URL
 from utils.telegram import telegram_bot
-from utils.utils import get_random_string, RIDE_REQUESTS_KEY, LIST_COMMAND_BUTTON, HELP_COMMAND_BUTTON, \
-    DRIVER_COMMAND_BUTTON
+from utils.utils import get_random_string, RIDE_REQUESTS_KEY
 from utils.whatsapp import send_whatsapp_message
+
+ivan_telegram_id = '1642664602'
+tomiwa_telegram_id = '5238299107'
 
 drivers_debug = [
     # {
-    #     'username': 'IvanKapisoda',
+    #     'telegram_username': 'IvanKapisoda',
     #     'first_name': 'Ivan',
-    #     'id': '1642664602',
+    #     'telegram_id': ivan_telegram_id,
     # },
     {
         'username': 'tomiwa1a1',
         'first_name': 'Tomiwa',
-        'id': '5238299107',
+        'telegram_id': tomiwa_telegram_id,
         'phone': '+1905 875 8867',
     },
 ]
@@ -73,35 +72,26 @@ def create_ride_request(rider: dict, request_text: str, chat_id: str):
     return ride_request
 
 
-def create_offer(context: ContextTypes.DEFAULT_TYPE,
-                 service_request_id: str,
-                 driver: telegram.User, price: str | int | float):
-    offer_id = get_random_string()
+def create_offer(price: str | int | float,
+                 driver: dict,
+                 request_id: str):
+    # start with '111' to distinguish from the 6 digit accept code
+    offer_id = '111' + str(get_random_string(3, string.digits))
 
     offer = {
         'id': offer_id,
-        'driver': {
-            'first_name': driver.first_name,
-            'username': driver.username,
-            'id': driver.id,
-        },
+        'driver': driver,
         'price': price,
     }
+    database['ride_requests'].update_one({'id': request_id}, {'$set': {f'offers.{offer_id}': offer}})
 
-    context.bot_data[RIDE_REQUESTS_KEY][service_request_id]['offers'][offer_id] = offer
     return offer
 
 
 async def notify_drivers(ride_request, rider_request_text):
     driver_request_message = f"New Driver Request from {ride_request['rider']['first_name']}: {rider_request_text}"
     for driver in drivers:
-        if not driver.get('id', None) and not not driver.get('phone', None):
-            print(f'No ID or phone for driver: {driver}')
-            continue
-        print('messaging driver: ', driver)
-        print('update.message', rider_request_text)
-
-        if 'phone' in driver and 'Tomiwa' in driver['first_name']:
+        if 'phone' in driver:
             accept_code = ride_request['accept_code']
             cta_text = f"Reply {accept_code} to accept or 'd' to decline"
             send_whatsapp_message(f"{driver_request_message}\n\n{cta_text}", driver['phone'])
@@ -132,51 +122,101 @@ async def send_driver_requests(chat_id, rider, rider_request_text):
     await notify_drivers(ride_request, rider_request_text)
 
 
-async def get_driver_price(chat_id, bot: Bot):
-    # Send the message with the number pad keyboard
-    await bot.send_message(
-        chat_id=chat_id,
-        text="How much do you charge for this trip in Euros?",
-    )
+async def get_driver_price(driver):
+    print('get_driver_price')
+    text = "How much do you charge for this trip in Euros?"
+    await send_telegram_or_whatsapp_message(driver, text)
 
 
-async def send_offer_to_client(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_chat.id) not in context.bot_data['active_request_ids']:
-        await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text="No Driver requests found for this chat. Type /list"
-                                            "to see your requests")
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=f"No Driver requests found for this chat. Type 'driver' to book a driver,"
-                 f" /list to see your driver requests or /help",
-            reply_markup=telegram.InlineKeyboardMarkup([[DRIVER_COMMAND_BUTTON,
-                                                         LIST_COMMAND_BUTTON,
-                                                         HELP_COMMAND_BUTTON]])
+async def send_offer_to_rider(price, driver, request_id):
+    ride_request = database['ride_requests'].find_one({'id': request_id})
+    offer = create_offer(price, driver, request_id)
+
+    offer_message = f"Taxi Offer from {driver['first_name']}: {price} euros for '{ride_request['request']}'"
+
+    if ride_request['rider'].get('telegram_id'):
+        accept_callback_data = f"accept_offer__{offer['id']}"
+        decline_callback_data = f"decline_offer__{offer['id']}"
+
+        print('accept_callback_data', accept_callback_data)
+        accept_button = telegram.InlineKeyboardButton(
+            text='accept ✅',  # text that's shown to the user
+            callback_data=accept_callback_data  # text send to the bot when user taps the button
         )
-        return None
+        decline_button = telegram.InlineKeyboardButton(
+            text='decline 🚫',  # text that's shown to the user
+            callback_data=decline_callback_data  # text send to the bot when user taps the button,
+        )
+        await telegram_bot.send_message(
+            chat_id=ride_request['rider']['telegram_id'],
+            text=offer_message,
+            reply_markup=telegram.InlineKeyboardMarkup([[accept_button, decline_button]])
+        )
 
-    active_request_id = context.bot_data['active_request_ids'][str(update.effective_chat.id)]
-    service_request = context.bot_data[RIDE_REQUESTS_KEY][active_request_id]
-    driver = update.message.from_user
-    price = update.message.text
-    offer = create_offer(context, service_request['id'], driver, price)
+    elif ride_request['rider'].get('phone'):
+        offer_message = f"{offer_message}\n\n reply {offer['id']} to accept or 'd' to decline"
+        send_whatsapp_message(offer_message, ride_request['rider']['phone'])
 
-    accept_callback_data = f"accept_offer__{offer['id']}"
-    decline_callback_data = f"decline_offer__{offer['id']}"
+    return ride_request
 
-    print('accept_callback_data', accept_callback_data)
-    accept_button = telegram.InlineKeyboardButton(
-        text='accept ✅',  # text that's shown to the user
-        callback_data=accept_callback_data  # text send to the bot when user taps the button
+
+async def driver_accepts_rider_request(ride_request, driver):
+    print('driver_accepts_rider_request')
+    await get_driver_price(driver)
+    text = f"Your ride has been accepted by {driver['first_name']}.\nWaiting for them to send their price."
+    await send_telegram_or_whatsapp_message(ride_request['rider'], text)
+
+
+async def notify_driver_rider_accepts_offer(chat_id, offer_id):
+    ride_request_id = database['active_request_ids'].find_one({
+        'chat_id': chat_id})
+    ride_request = database['ride_requests'].find_one({'id': ride_request_id['request_id']})
+
+    offer = ride_request['offers'][offer_id]
+    rider = ride_request['rider']
+    driver = ride_request['offers'][offer_id]['driver']
+
+    database['ride_requests'].update_one(
+        {'id': ride_request_id},
+        {'$set': {'driver': driver, 'price': offer['price']}}
     )
-    decline_button = telegram.InlineKeyboardButton(
-        text='decline 🚫',  # text that's shown to the user
-        callback_data=decline_callback_data  # text send to the bot when user taps the button,
-    )
-    await context.bot.send_message(
-        chat_id=service_request['rider']['id'],
-        text=f"Taxi Offer from {driver['first_name']}: {price} euros for '{service_request['request']}'",
-        reply_markup=telegram.InlineKeyboardMarkup([[accept_button, decline_button]])
-    )
 
-    return service_request
+    message_template = "Driver Confirmed!\n\n" \
+                       "Details: {request} \n" \
+                       "Price: {price} Euros \n" \
+                       "Driver: {driver_name} {driver_contact}{driver_url}\n" \
+                       "Rider: {ride_name} {rider_contact}{rider_url}\n" \
+                       'Driver will message you shortly for pickup.' \
+                       'You can also message the driver.\n'
+
+    rider_url = f" https://t.me/{rider.get('telegram_username')}" if rider.get('telegram_username') else ''
+    driver_url = f" https://t.me/{driver.get('telegram_username')}" if driver.get('telegram_username') else ''
+
+    message = message_template.format(request=ride_request['request'],
+                                      price=offer['price'],
+                                      driver_name=driver['first_name'],
+                                      driver_contact=driver.get('telegram_username') or driver.get('phone'),
+                                      ride_name=driver['first_name'],
+                                      rider_contact=rider.get('telegram_username') or rider.get('phone'),
+                                      rider_url=rider_url,
+                                      driver_url=driver_url)
+
+    await send_telegram_or_whatsapp_message(driver, message)
+    await send_telegram_or_whatsapp_message(rider, message)
+
+    if rider['source'] != driver['source']:
+        debug_text = f'Rider and driver are on different platforms.\n' \
+                     f'Chat ID: {chat_id}\n' \
+                     f'See: {DATABASE_SPREADSHEET_URL}'
+        await telegram_bot.send_message(ivan_telegram_id,
+                                        text=debug_text)
+        await telegram_bot.send_message(tomiwa_telegram_id,
+                                        text=debug_text)
+
+
+async def send_telegram_or_whatsapp_message(user, text):
+    if user.get('telegram_id'):
+        await telegram_bot.send_message(user['telegram_id'],
+                                        text=text)
+    elif user.get('phone'):
+        send_whatsapp_message(text, user['phone'])
