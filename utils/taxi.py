@@ -13,17 +13,17 @@ ivan_telegram_id = '1642664602'
 tomiwa_telegram_id = '5238299107'
 
 drivers_debug = [
-    # {
-    #     'telegram_username': 'IvanKapisoda',
-    #     'first_name': 'Ivan',
-    #     'telegram_id': ivan_telegram_id,
-    # },
     {
-        'username': 'tomiwa1a1',
-        'first_name': 'Tomiwa',
-        'telegram_id': tomiwa_telegram_id,
-        'phone': '+1905 875 8867',
+        'telegram_username': 'IvanKapisoda',
+        'first_name': 'Ivan',
+        'telegram_id': ivan_telegram_id,
     },
+    # {
+    #     'username': 'tomiwa1a1',
+    #     'first_name': 'Tomiwa',
+    #     'telegram_id': tomiwa_telegram_id,
+    #     'phone': '+1905 875 8867',
+    # },
 ]
 
 drivers = drivers_debug
