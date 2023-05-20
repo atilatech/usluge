@@ -1,5 +1,6 @@
 import string
 import time
+from collections import defaultdict
 
 import telegram
 from telegram import Bot, Update
@@ -46,12 +47,12 @@ def create_ride_request(rider: dict, request_text: str, chat_id: str):
     accept_code = get_random_string(6, string.digits)
     ride_request = {
         'id': request_id,
-        'accept_code': request_id,
+        'accept_code': accept_code,
         'rider': {
-            'first_name': rider['first_name'],
-            'telegram_username': rider['telegram_username'],
-            'telegram_id': rider['telegram_id'],
-            'phone': rider['phone'],
+            'first_name': rider.get('first_name', None),
+            'telegram_username': rider.get('telegram_username', None),
+            'telegram_id': rider.get('telegram_id', None),
+            'phone': rider.get('phone', None),
         },
         'driver': None,
         'request': request_text,
@@ -60,6 +61,7 @@ def create_ride_request(rider: dict, request_text: str, chat_id: str):
         'date_created': int(time.time())
     }
 
+    print('ride_request', ride_request)
     database['ride_requests'].insert_one(ride_request)
 
     database['active_request_ids'].update_one(
@@ -91,7 +93,7 @@ def create_offer(context: ContextTypes.DEFAULT_TYPE,
 
 
 async def notify_drivers(ride_request, rider_request_text):
-    driver_request_message = f"New Driver Request from {ride_request['first_name']}: {rider_request_text}"
+    driver_request_message = f"New Driver Request from {ride_request['rider']['first_name']}: {rider_request_text}"
     for driver in drivers:
         if not driver.get('id', None) and not not driver.get('phone', None):
             print(f'No ID or phone for driver: {driver}')

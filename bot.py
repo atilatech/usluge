@@ -41,11 +41,11 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         enough_info_to_make_request = check_enough_info_to_make_request(message_text)
         if ai_true_key in enough_info_to_make_request.lower():
 
-            rider = defaultdict(lambda: {
+            rider = {
                 'first_name': update.message.from_user.first_name,
                 'telegram_username': update.message.from_user.username,
                 'telegram_id': update.message.from_user.id
-            })
+            }
 
             await context.bot.send_message(
                 chat_id=update.message.from_user.id,

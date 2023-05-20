@@ -26,7 +26,8 @@ async def whatsapp():
     enough_info_to_make_request = check_enough_info_to_make_request(incoming_msg)
 
     if ai_true_key in enough_info_to_make_request:
-        reply = f"Sending driver requests: {incoming_msg}"
+        reply = f"We are looking for drivers for your request: {incoming_msg}\n\n"
+        f"We'll let you know as soon as we receive a driver."
         chat_id = incoming_number
         rider = {
             'phone': incoming_number,

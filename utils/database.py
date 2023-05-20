@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from pymongo import MongoClient
 
 from utils.credentials import MONGODB_URL, MONGODB_USERNAME, MONGODB_PASSWORD

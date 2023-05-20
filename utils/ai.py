@@ -11,9 +11,9 @@ ai_true_key = 'ai_true'
 
 def check_enough_info_to_make_request(request):
     template = "Your job is to let the user know if the message has enough information to get a driver." \
-               "Does the following message have enough information to book a driver?" \
+               "If it does not, let the user know what is missing in a friendly and concise way" \
                f"If there is enough information, include '{ai_true_key}' in your response. Otherwise,"\
-               f"The following 4 pieces of information is required to book a driver: {request_requirements}."
+               f"Please provide the following: {request_requirements}."
     with get_openai_callback() as cb:
         messages = [
             SystemMessage(content=template),
