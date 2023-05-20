@@ -5,7 +5,7 @@ from telegram import Bot, Update
 from telegram.ext import ContextTypes
 
 from utils.credentials import BOT_TOKEN
-from utils.save_data import get_drivers
+from utils.database import database
 from utils.utils import get_random_string, RIDE_REQUESTS_KEY, LIST_COMMAND_BUTTON, HELP_COMMAND_BUTTON, \
     DRIVER_COMMAND_BUTTON
 from utils.whatsapp import send_whatsapp_message
@@ -38,29 +38,31 @@ def get_matching_ride_request(target_driver_id, bot_data):
     return None
 
 
-def create_ride_request(context: ContextTypes.DEFAULT_TYPE, rider: telegram.User, text: str, update: Update):
+def create_ride_request(rider: dict, request_text: str, chat_id: str):
+    chat_id = str(chat_id)
     request_id = get_random_string()
     ride_request = {
         'id': request_id,
         'rider': {
-            'first_name': rider.first_name,
-            'username': rider.username,
-            'id': rider.id,
+            'first_name': rider['first_name'],
+            'telegram_username': rider['telegram_username'],
+            'telegram_id': rider['telegram_id'],
+            'phone': rider['phone'],
         },
         'driver': None,
-        'request': text,
+        'request': request_text,
         'price': None,
         'offers': {},
         'date_created': int(time.time())
     }
-    if RIDE_REQUESTS_KEY not in context.bot_data:
-        context.bot_data[RIDE_REQUESTS_KEY] = {}
 
-    context.bot_data[RIDE_REQUESTS_KEY][request_id] = ride_request
-    if 'active_request_ids' not in context.bot_data:
-        context.bot_data['active_request_ids'] = {}
+    database['ride_requests'].insert_one(ride_request)
 
-    context.bot_data['active_request_ids'][str(update.effective_chat.id)] = request_id
+    database['active_request_ids'].update_one(
+        {'chat_id': chat_id},
+        {'$set': {'chat_id': chat_id, 'request_id': request_id}},
+        upsert=True
+    )
 
     return ride_request
 
@@ -120,7 +122,13 @@ async def notify_drivers(ride_id, driver_request):
 
 
 async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE, driver_request):
-    ride_request = create_ride_request(context, update.message.from_user, driver_request, update)
+
+    rider = {
+        'first_name': update.message.from_user.first_name,
+        'telegram_username': update.message.from_user.username,
+        'telegram_id': update.message.from_user.id,
+    }
+    ride_request = create_ride_request(rider, driver_request, str(update.effective_chat.id))
     ride_id = ride_request['id']
 
     await bot.send_message(

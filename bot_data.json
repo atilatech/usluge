@@ -1,0 +1,34 @@
+{
+    "ride_requests": {
+        "uk0gk3ky8i357h1e": {
+            "id": "uk0gk3ky8i357h1e",
+            "rider": {
+                "first_name": "Tomiwa",
+                "username": "tomiwa1a1",
+                "id": 5238299107
+            },
+            "driver": {
+                "first_name": "Tomiwa",
+                "username": "tomiwa1a1",
+                "id": 5238299107
+            },
+            "request": "chedi to podgorica 3pm today",
+            "price": "70",
+            "offers": {
+                "0mmuu2r10s7zxvc6": {
+                    "id": "0mmuu2r10s7zxvc6",
+                    "driver": {
+                        "first_name": "Tomiwa",
+                        "username": "tomiwa1a1",
+                        "id": 5238299107
+                    },
+                    "price": "70"
+                }
+            },
+            "date_created": 1684563065
+        }
+    },
+    "active_request_ids": {
+        "5238299107": "uk0gk3ky8i357h1e"
+    }
+}
