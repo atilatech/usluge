@@ -25,3 +25,7 @@ GOOGLE_SERVICE_ACCOUNT_CREDENTIALS = {
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/usluge-bot%40atila-352102.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
 }
+
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', False)
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', False)
+WHATSAPP_NUMBER = os.getenv('WHATSAPP_NUMBER', False)
