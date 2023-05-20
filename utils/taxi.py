@@ -4,24 +4,27 @@ import telegram
 from telegram import Bot, Update
 from telegram.ext import ContextTypes
 
+from utils.credentials import BOT_TOKEN
 from utils.save_data import get_drivers
 from utils.utils import get_random_string, RIDE_REQUESTS_KEY, LIST_COMMAND_BUTTON, HELP_COMMAND_BUTTON, \
     DRIVER_COMMAND_BUTTON
+from utils.whatsapp import send_whatsapp_message
 
 drivers_debug = [
-    {
-        'username': 'IvanKapisoda',
-        'first_name': 'Ivan',
-        'id': '1642664602',
-    },
     # {
-    #     'username': 'Tomiwa',
-    #     'first_name': 'tomiwa1a1',
-    #     'id': '5238299107',
+    #     'username': 'IvanKapisoda',
+    #     'first_name': 'Ivan',
+    #     'id': '1642664602',
     # },
+    {
+        'username': 'tomiwa1a1',
+        'first_name': 'Tomiwa',
+        'id': '5238299107',
+        'phone': '+1905 875 8867',
+    },
 ]
 
-drivers = get_drivers()
+drivers = drivers_debug
 
 
 def get_matching_ride_request(target_driver_id, bot_data):
@@ -81,6 +84,41 @@ def create_offer(context: ContextTypes.DEFAULT_TYPE,
     return offer
 
 
+async def notify_drivers(ride_id, driver_request):
+    bot = telegram.Bot(BOT_TOKEN)
+
+    driver_request_message = f"New Driver Request: {driver_request}"
+    for driver in drivers:
+        if not driver.get('id', None) and not not driver.get('phone', None):
+            print(f'No ID or phone for driver: {driver}')
+            continue
+        print('messaging driver: ', driver)
+        print('update.message', driver_request)
+
+        if 'phone' in driver and 'Tomiwa' in driver['first_name']:
+            send_whatsapp_message(driver_request_message, driver['phone'])
+            send_whatsapp_message("Reply 'a' to accept or 'd' to decline", driver['phone'])
+
+        if 'id' in driver:
+            accept_callback_data = f"accept__{ride_id}"
+            decline_callback_data = f"decline__{ride_id}"
+            accept_button = telegram.InlineKeyboardButton(
+                text='accept ✅',  # text that's shown to the user
+                callback_data=accept_callback_data  # text send to the bot when user taps the button
+            )
+            decline_button = telegram.InlineKeyboardButton(
+                text='decline 🚫',  # text that's shown to the user
+                callback_data=decline_callback_data  # text send to the bot when user taps the button
+            )
+
+            async with bot:
+                await bot.send_message(
+                    chat_id=driver['id'],
+                    text=driver_request_message,
+                    reply_markup=telegram.InlineKeyboardMarkup([[accept_button, decline_button]])
+                )
+
+
 async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE, driver_request):
     ride_request = create_ride_request(context, update.message.from_user, driver_request, update)
     ride_id = ride_request['id']
@@ -89,29 +127,7 @@ async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE
         chat_id=update.message.from_user.id,
         text=f"We are looking for drivers for the following request: {driver_request}\n\n"
     )
-
-    for driver in drivers:
-        if not driver.get('id', None):
-            print(f'No ID for driver: {driver}')
-            continue
-        print('messaging driver: ', driver)
-        print('update.message', driver_request)
-        print('context.bot_data', context.bot_data)
-        accept_callback_data = f"accept__{ride_id}"
-        decline_callback_data = f"decline__{ride_id}"
-        accept_button = telegram.InlineKeyboardButton(
-            text='accept ✅',  # text that's shown to the user
-            callback_data=accept_callback_data  # text send to the bot when user taps the button
-        )
-        decline_button = telegram.InlineKeyboardButton(
-            text='decline 🚫',  # text that's shown to the user
-            callback_data=decline_callback_data  # text send to the bot when user taps the button
-        )
-        await bot.send_message(
-            chat_id=driver['id'],
-            text=f"New Driver Request: {driver_request}",
-            reply_markup=telegram.InlineKeyboardMarkup([[accept_button, decline_button]])
-        )
+    await notify_drivers(ride_id, driver_request)
 
 
 async def get_driver_price(chat_id, bot: Bot):
