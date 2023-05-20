@@ -25,7 +25,7 @@ This project was created using [Python Telegram Bot: Your first Bot tutorial](ht
 
 This project exists as a bot on a `vps`, run it by `ssh` into the repo
 
-`ssh -i /Users/tomiwa/.ssh/id_rsa_digitalocean root@167.172.106.44 ; cd usluge ; git pull`
+`ssh -i /Users/tomiwa/.ssh/id_rsa_digitalocean root@167.172.106.44 ; cd usluge ; python bot.py`
 
 ### Copy local files to Server
 

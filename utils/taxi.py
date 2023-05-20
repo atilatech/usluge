@@ -1,3 +1,4 @@
+import string
 import time
 
 import telegram
@@ -6,6 +7,7 @@ from telegram.ext import ContextTypes
 
 from utils.credentials import BOT_TOKEN
 from utils.database import database
+from utils.telegram import telegram_bot
 from utils.utils import get_random_string, RIDE_REQUESTS_KEY, LIST_COMMAND_BUTTON, HELP_COMMAND_BUTTON, \
     DRIVER_COMMAND_BUTTON
 from utils.whatsapp import send_whatsapp_message
@@ -41,8 +43,10 @@ def get_matching_ride_request(target_driver_id, bot_data):
 def create_ride_request(rider: dict, request_text: str, chat_id: str):
     chat_id = str(chat_id)
     request_id = get_random_string()
+    accept_code = get_random_string(6, string.digits)
     ride_request = {
         'id': request_id,
+        'accept_code': request_id,
         'rider': {
             'first_name': rider['first_name'],
             'telegram_username': rider['telegram_username'],
@@ -86,22 +90,22 @@ def create_offer(context: ContextTypes.DEFAULT_TYPE,
     return offer
 
 
-async def notify_drivers(ride_id, driver_request):
-    bot = telegram.Bot(BOT_TOKEN)
-
-    driver_request_message = f"New Driver Request: {driver_request}"
+async def notify_drivers(ride_request, rider_request_text):
+    driver_request_message = f"New Driver Request from {ride_request['first_name']}: {rider_request_text}"
     for driver in drivers:
         if not driver.get('id', None) and not not driver.get('phone', None):
             print(f'No ID or phone for driver: {driver}')
             continue
         print('messaging driver: ', driver)
-        print('update.message', driver_request)
+        print('update.message', rider_request_text)
 
         if 'phone' in driver and 'Tomiwa' in driver['first_name']:
-            send_whatsapp_message(driver_request_message, driver['phone'])
-            send_whatsapp_message("Reply 'a' to accept or 'd' to decline", driver['phone'])
+            accept_code = ride_request['accept_code']
+            cta_text = f"Reply {accept_code} to accept or 'd' to decline"
+            send_whatsapp_message(f"{driver_request_message}\n\n{cta_text}", driver['phone'])
 
-        if 'id' in driver:
+        if 'telegram_id' in driver:
+            ride_id = ride_request['id']
             accept_callback_data = f"accept__{ride_id}"
             decline_callback_data = f"decline__{ride_id}"
             accept_button = telegram.InlineKeyboardButton(
@@ -113,29 +117,17 @@ async def notify_drivers(ride_id, driver_request):
                 callback_data=decline_callback_data  # text send to the bot when user taps the button
             )
 
-            async with bot:
-                await bot.send_message(
-                    chat_id=driver['id'],
+            async with telegram_bot:
+                await telegram_bot.send_message(
+                    chat_id=driver['telegram_id'],
                     text=driver_request_message,
                     reply_markup=telegram.InlineKeyboardMarkup([[accept_button, decline_button]])
                 )
 
 
-async def find_taxi(update: Update, bot: Bot, context: ContextTypes.DEFAULT_TYPE, driver_request):
-
-    rider = {
-        'first_name': update.message.from_user.first_name,
-        'telegram_username': update.message.from_user.username,
-        'telegram_id': update.message.from_user.id,
-    }
-    ride_request = create_ride_request(rider, driver_request, str(update.effective_chat.id))
-    ride_id = ride_request['id']
-
-    await bot.send_message(
-        chat_id=update.message.from_user.id,
-        text=f"We are looking for drivers for the following request: {driver_request}\n\n"
-    )
-    await notify_drivers(ride_id, driver_request)
+async def send_driver_requests(chat_id, rider, rider_request_text):
+    ride_request = create_ride_request(rider, rider_request_text, str(chat_id))
+    await notify_drivers(ride_request, rider_request_text)
 
 
 async def get_driver_price(chat_id, bot: Bot):

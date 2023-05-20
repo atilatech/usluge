@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 import telegram
 from telegram import Update
@@ -8,7 +9,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 from utils.ai import check_enough_info_to_make_request, ai_true_key
 from utils.credentials import BOT_TOKEN
 from utils.save_data import save_message_response, save_bot_data
-from utils.taxi import find_taxi, get_driver_price, send_offer_to_client
+from utils.taxi import send_driver_requests, get_driver_price, send_offer_to_client
 from utils.utils import RIDE_REQUESTS_KEY, get_do_nothing_button, bot_data_file_path, request_requirements
 
 logging.basicConfig(
@@ -39,7 +40,19 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # if len(message_text.split(' ')) < 4:
         enough_info_to_make_request = check_enough_info_to_make_request(message_text)
         if ai_true_key in enough_info_to_make_request.lower():
-            await find_taxi(update, application.bot, context, message_text)
+
+            rider = defaultdict(lambda: {
+                'first_name': update.message.from_user.first_name,
+                'telegram_username': update.message.from_user.username,
+                'telegram_id': update.message.from_user.id
+            })
+
+            await context.bot.send_message(
+                chat_id=update.message.from_user.id,
+                text=f"We are looking for drivers for your request: {message_text}\n\n"
+                     f"We'll let you know as soon as we receive an order."
+            )
+            await send_driver_requests(update.effective_chat.id, rider, context)
         else:
             await context.bot.send_message(chat_id=update.effective_chat.id, text=enough_info_to_make_request)
 
